@@ -1,0 +1,125 @@
+# Github action inspired by
+# https://github.com/jonathanknowles/haskell-example
+# https://github.com/DeltaQ-SD/deltaq/
+#
+name: Build
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+      - synchronize
+      - opened
+      - reopened
+  push:
+    branches:
+      - main
+  schedule:
+    # Run once per day (at UTC 18:00) to maintain cache:
+    - cron: 0 18 * * *
+jobs:
+  build:
+    name: ${{ matrix.os }}-ghc-${{ matrix.ghc }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        cabal:
+          - '3.12'
+        ghc:
+          - '8.10'
+          - '9.6'
+          - '9.10'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Environment
+        uses: haskell-actions/setup@v2
+        id: setup
+        with:
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: ${{ matrix.cabal }}
+
+      - name: Configure
+        run: |
+          cabal configure \
+            --enable-tests \
+            --enable-coverage \
+            --enable-benchmarks \
+            --enable-documentation \
+            --test-show-details=direct \
+            --write-ghc-environment-files=always
+          cabal build all --dry-run
+        # The last step generates dist-newstyle/cache/plan.json for the cache key.
+
+      # For a description of how the Caching works, see
+      # https://github.com/haskell-actions/setup?tab=readme-ov-file#model-cabal-workflow-with-caching
+      - name: Dependencies (Restore from cache)
+        uses: actions/cache/restore@v4
+        id: cache
+        env:
+          key: ${{ matrix.os }}-ghc-${{ matrix.ghc }}
+          hash: ${{ hashFiles('**/plan.json') }}
+        with:
+          key: ${{ env.key }}-${{ env.hash }}
+          restore-keys: ${{ env.key }}-
+          path: ${{ steps.setup.outputs.cabal-store }}
+
+      - name: Dependencies (Install)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: cabal build all --only-dependencies
+
+      # Cache dependencies already here,
+      # so that we do not have to rebuild them should the subsequent steps fail.
+      - name: Dependencies (Save cache)
+        uses: actions/cache/save@v4
+        # If we had an exact cache hit,
+        # trying to save the cache would error because of key clash.
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+          path: ${{ steps.setup.outputs.cabal-store }}
+
+      - name: Build
+        run: >
+          cabal build all
+          --enable-tests
+          --enable-benchmarks
+
+      - name: Test
+        run: >
+          cabal test all
+
+      - name: Benchmark
+        run: >
+          cabal bench all
+          || true
+
+      - name: Documentation (Generation)
+        run: >
+          cabal haddock all
+          --enable-documentation
+          --haddock-hyperlink-source
+          --haddock-html-location
+          'https://hackage.haskell.org/package/$pkg-$version/docs'
+
+      - name: Documentation (Staging)
+        if: |
+            github.ref == 'refs/heads/main'
+            && matrix.os == 'ubuntu-latest'
+            && matrix.ghc == '9.10'
+        run: |
+          mkdir -p gh-pages/doc
+          mv dist-newstyle/build/*/*/*/doc/html/* gh-pages/doc
+          touch gh-pages/.nojekyll
+
+      - name: Documentation (Deployment)
+        if: |
+            github.ref == 'refs/heads/main'
+            && matrix.os == 'ubuntu-latest'
+            && matrix.ghc == '9.10'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: gh-pages
