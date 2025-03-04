@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="annot"><span class="hs-comment">{-|
+Copyright: &#169; 2021-2023 IOHK, 2024 Cardano Foundation
+License: Apache-2.0
+
+Delta types for lists.
+-}</span></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Data.Delta.List.html"><span class="hs-identifier">Data.Delta.List</span></a></span><span>
+</span><span id="line-10"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Delta.List.html#DeltaList"><span class="hs-identifier">DeltaList</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Prelude</span></span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Delta.Core.html"><span class="hs-identifier">Data.Delta.Core</span></a></span><span>
+</span><span id="line-16"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Delta.Core.html#Delta"><span class="hs-identifier">Delta</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    Delta type for lists
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="annot"><span class="hs-comment">-- | Delta type for lists where a list of elements is prepended.</span></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">newtype</span><span> </span><span id="DeltaList"><span class="annot"><a href="Data.Delta.List.html#DeltaList"><span class="hs-identifier hs-var">DeltaList</span></a></span></span><span> </span><span id="local-6989586621679071999"><span class="annot"><a href="#local-6989586621679071999"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Append"><span class="annot"><a href="Data.Delta.List.html#Append"><span class="hs-identifier hs-var">Append</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679071999"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-25"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679072003"><span id="local-6989586621679072008"><span class="annot"><span class="annottext">DeltaList a -&gt; DeltaList a -&gt; Bool
+(DeltaList a -&gt; DeltaList a -&gt; Bool)
+-&gt; (DeltaList a -&gt; DeltaList a -&gt; Bool) -&gt; Eq (DeltaList a)
+forall a. Eq a =&gt; DeltaList a -&gt; DeltaList a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall a. Eq a =&gt; DeltaList a -&gt; DeltaList a -&gt; Bool
+== :: DeltaList a -&gt; DeltaList a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; DeltaList a -&gt; DeltaList a -&gt; Bool
+/= :: DeltaList a -&gt; DeltaList a -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679072019"><span id="local-6989586621679072024"><span id="local-6989586621679072028"><span id="local-6989586621679072032"><span id="local-6989586621679072036"><span id="local-6989586621679072040"><span id="local-6989586621679072044"><span class="annot"><span class="annottext">Eq (DeltaList a)
+Eq (DeltaList a) =&gt;
+(DeltaList a -&gt; DeltaList a -&gt; Ordering)
+-&gt; (DeltaList a -&gt; DeltaList a -&gt; Bool)
+-&gt; (DeltaList a -&gt; DeltaList a -&gt; Bool)
+-&gt; (DeltaList a -&gt; DeltaList a -&gt; Bool)
+-&gt; (DeltaList a -&gt; DeltaList a -&gt; Bool)
+-&gt; (DeltaList a -&gt; DeltaList a -&gt; DeltaList a)
+-&gt; (DeltaList a -&gt; DeltaList a -&gt; DeltaList a)
+-&gt; Ord (DeltaList a)
+DeltaList a -&gt; DeltaList a -&gt; Bool
+DeltaList a -&gt; DeltaList a -&gt; Ordering
+DeltaList a -&gt; DeltaList a -&gt; DeltaList a
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall a. Ord a =&gt; Eq (DeltaList a)
+forall a. Ord a =&gt; DeltaList a -&gt; DeltaList a -&gt; Bool
+forall a. Ord a =&gt; DeltaList a -&gt; DeltaList a -&gt; Ordering
+forall a. Ord a =&gt; DeltaList a -&gt; DeltaList a -&gt; DeltaList a
+$ccompare :: forall a. Ord a =&gt; DeltaList a -&gt; DeltaList a -&gt; Ordering
+compare :: DeltaList a -&gt; DeltaList a -&gt; Ordering
+$c&lt; :: forall a. Ord a =&gt; DeltaList a -&gt; DeltaList a -&gt; Bool
+&lt; :: DeltaList a -&gt; DeltaList a -&gt; Bool
+$c&lt;= :: forall a. Ord a =&gt; DeltaList a -&gt; DeltaList a -&gt; Bool
+&lt;= :: DeltaList a -&gt; DeltaList a -&gt; Bool
+$c&gt; :: forall a. Ord a =&gt; DeltaList a -&gt; DeltaList a -&gt; Bool
+&gt; :: DeltaList a -&gt; DeltaList a -&gt; Bool
+$c&gt;= :: forall a. Ord a =&gt; DeltaList a -&gt; DeltaList a -&gt; Bool
+&gt;= :: DeltaList a -&gt; DeltaList a -&gt; Bool
+$cmax :: forall a. Ord a =&gt; DeltaList a -&gt; DeltaList a -&gt; DeltaList a
+max :: DeltaList a -&gt; DeltaList a -&gt; DeltaList a
+$cmin :: forall a. Ord a =&gt; DeltaList a -&gt; DeltaList a -&gt; DeltaList a
+min :: DeltaList a -&gt; DeltaList a -&gt; DeltaList a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679072058"><span id="local-6989586621679072064"><span id="local-6989586621679072068"><span class="annot"><span class="annottext">Int -&gt; DeltaList a -&gt; ShowS
+[DeltaList a] -&gt; ShowS
+DeltaList a -&gt; String
+(Int -&gt; DeltaList a -&gt; ShowS)
+-&gt; (DeltaList a -&gt; String)
+-&gt; ([DeltaList a] -&gt; ShowS)
+-&gt; Show (DeltaList a)
+forall a. Show a =&gt; Int -&gt; DeltaList a -&gt; ShowS
+forall a. Show a =&gt; [DeltaList a] -&gt; ShowS
+forall a. Show a =&gt; DeltaList a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; DeltaList a -&gt; ShowS
+showsPrec :: Int -&gt; DeltaList a -&gt; ShowS
+$cshow :: forall a. Show a =&gt; DeltaList a -&gt; String
+show :: DeltaList a -&gt; String
+$cshowList :: forall a. Show a =&gt; [DeltaList a] -&gt; ShowS
+showList :: [DeltaList a] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-28"></span><span class="hs-comment">-- prop&gt; apply (Append xs) ys = xs ++ ys</span><span>
+</span><span id="line-29"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679071997"><span class="annot"><a href="Data.Delta.Core.html#Delta"><span class="hs-identifier hs-type">Delta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Delta.List.html#DeltaList"><span class="hs-identifier hs-type">DeltaList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071997"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-30"></span><span>    </span><span class="hs-keyword">type</span><span> </span><span id="Base"><span class="annot"><a href="Data.Delta.Core.html#Base"><span class="hs-identifier hs-var">Base</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Delta.List.html#DeltaList"><span class="hs-identifier hs-type">DeltaList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071997"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679071997"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-31"></span><span>    </span><span id="local-6989586621679072075"><span class="annot"><span class="annottext">apply :: DeltaList a -&gt; Base (DeltaList a) -&gt; Base (DeltaList a)
+</span><a href="#local-6989586621679072075"><span class="hs-identifier hs-var hs-var hs-var">apply</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Delta.List.html#Append"><span class="hs-identifier hs-type">Append</span></a></span><span> </span><span id="local-6989586621679072077"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679072077"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679072078"><span class="annot"><span class="annottext">Base (DeltaList a)
+</span><a href="#local-6989586621679072078"><span class="hs-identifier hs-var">ys</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679072077"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; [a]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[a]
+Base (DeltaList a)
+</span><a href="#local-6989586621679072078"><span class="hs-identifier hs-var">ys</span></a></span><span>
+</span><span id="line-32"></span></pre></body></html>
