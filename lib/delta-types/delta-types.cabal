@@ -85,7 +85,9 @@ test-suite unit
   main-is:          Main.hs
   build-depends:
     , base
+    , delta-types
     , hspec >= 2.11.0 && < 2.12
+    , QuickCheck >= 2.14 && < 2.16
   build-tool-depends: hspec-discover:hspec-discover
   other-modules:
-    Data.DeltaSpec
+    Data.Delta.CoreSpec
