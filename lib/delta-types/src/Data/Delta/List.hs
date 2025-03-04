@@ -29,3 +29,14 @@ newtype DeltaList a = Append [a]
 instance Delta (DeltaList a) where
     type Base (DeltaList a) = [a]
     apply (Append xs) ys = xs ++ ys
+
+-- | Remember that the semigroup instance is required to satisfy
+-- the following properties:
+--
+-- prop> apply mempty = id
+-- prop> apply (d1 <> d2) = apply d1 . apply d2
+instance Ord a => Semigroup (DeltaList a) where
+    (Append xs) <> (Append ys) = Append (xs ++ ys)
+
+instance Ord a => Monoid (DeltaList a) where
+    mempty = Append []
