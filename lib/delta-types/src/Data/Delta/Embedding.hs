@@ -68,8 +68,8 @@ three components.
 * 'update' maps a delta type @da@ to a delta type @db@.
     For this mapping, both the value of type @a@ and a corresponding
     value of type @b@ are provided;
-    the delta types @da@ and @db@ are
-    relative to these values.
+    the delta types @da@ and @db@ are relative to these values.
+    In the definition of 'update', we can assume that @Right a = load b@.
 
 The embedding of one type into the other is characterized by the following
 properties:
@@ -94,7 +94,7 @@ properties:
 * The embedding of a delta __commutes with 'apply'__.
     We have
 
-        > Just (apply da a) = load (apply (update a b da) b)
+        > Right (apply da a) = load (apply (update a b da) b)
         >     where Right a = load b
 
     However, since the embedding is redundant, we often have
@@ -171,6 +171,11 @@ pair (Embedding inject1 project1) (Embedding inject2 project2) =
         pure ((a1,a2), pairMachine m1 m2)
 
 -- | Lift a sequence of updates through an 'Embedding'.
+--
+-- >   (b, dbs) = liftUpdates (mkEmbedding embedding') das a
+-- > implies
+-- >   load embedding' b = Right (apply das a)
+-- >   b = apply dbs (write embedding' a)
 liftUpdates
     :: Delta da
     => Embedding da db
