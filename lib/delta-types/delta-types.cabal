@@ -92,5 +92,6 @@ test-suite unit
   build-tool-depends: hspec-discover:hspec-discover
   other-modules:
     Data.Delta.CoreSpec
+    Data.Delta.EmbeddingSpec
     Data.Delta.ListSpec
     Data.Delta.SetSpec
