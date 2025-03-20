@@ -31,6 +31,12 @@ import Data.Delta.Embedding
     , mkEmbedding
     , pair
     )
+import Data.Delta
+    ( Semigroupoid (o)
+    )
+import Data.Maybe
+    ( isJust
+    )
 import Test.Hspec
     ( Spec
     , describe
@@ -43,6 +49,7 @@ import Test.QuickCheck
     , forAll
     , property
     , (===)
+    , (.&&.)
     )
 
 {-----------------------------------------------------------------------------
@@ -51,46 +58,65 @@ import Test.QuickCheck
 
 spec :: Spec
 spec = do
-    describe "testEmbedding'" $ do
+    describe "embeddingAB'" $ do
         it "prop_load_write" $
-            prop_load_write testEmbedding'
+            prop_load_write embeddingAB'
 
         it "prop_update_apply" $
-            prop_update_apply testEmbedding'
+            prop_update_apply embeddingAB'
 
     describe "fromEmbedding . mkEmbedding'" $ do
-        let testEmbedding'2 = fromEmbedding $ mkEmbedding testEmbedding'
+        let embeddingAB'2 = fromEmbedding $ mkEmbedding embeddingAB'
 
         it "prop_load_write" $
-            prop_load_write testEmbedding'2
+            prop_load_write embeddingAB'2
 
         it "prop_update_apply" $
-            prop_update_apply testEmbedding'2
+            prop_update_apply embeddingAB'2
 
     describe "pair" $ do
-        let testEmbedding'3 =
-                fromEmbedding
-                    $ pair testEmbedding testEmbedding
+        let embeddingAABB = fromEmbedding $ pair embeddingAB embeddingAB
 
         it "prop_load_write" $
-            prop_load_write testEmbedding'3
+            prop_load_write embeddingAABB
 
         it "prop_update_apply" $
-            prop_update_apply testEmbedding'3
+            prop_update_apply embeddingAABB
 
     describe "liftUpdates" $ do
         it "load . apply" $ property $
             \(das :: [DeltaA]) (a :: A) ->
-                let Embedding'{load} = testEmbedding'
-                    (b, _) = liftUpdates testEmbedding das a
+                let Embedding'{load} = embeddingAB'
+                    (b, _) = liftUpdates embeddingAB das a
                 in  toMaybe (load b)
                         ===  Just (apply das a)
 
         it "apply . load" $ property $
             \(das :: [DeltaA]) (a :: A) ->
-                let Embedding'{write} = testEmbedding'
-                    (b, dbs) = liftUpdates testEmbedding das a
+                let Embedding'{write} = embeddingAB'
+                    (b, dbs) = liftUpdates embeddingAB das a
                 in  b  ===  apply dbs (write a)
+
+    describe "Semigroupid" $ do
+        let e1 = diagonal `o` embeddingAB
+            e2 = pair embeddingAB embeddingAB `o` diagonal
+
+        it "prop_load_write" $
+            prop_load_write (fromEmbedding e1)
+            .&&. prop_load_write (fromEmbedding e2)
+
+        it "prop_update_apply" $
+            prop_update_apply (fromEmbedding e1)
+            .&&. prop_update_apply (fromEmbedding e2)
+
+        it "diagonal commutes" $ property $
+            \(das :: [DeltaA]) (a :: A) ->
+                let Embedding'{load=load1} = fromEmbedding e1
+                    Embedding'{load=load2} = fromEmbedding e2
+                    (b1, _) = liftUpdates e1 das a
+                    (b2, _) = liftUpdates e2 das a
+                in  isJust (toMaybe (load1 b1))
+                    .&&. toMaybe (load1 b1)  ===  toMaybe (load2 b2)
 
 -- | Law relating 'load' and 'write'.
 prop_load_write
@@ -143,16 +169,30 @@ instance Delta DeltaB where
     apply (ChangeChar _) Nothing = Nothing
     apply (ChangeChar c) (Just (a, _)) = Just (a, c)
 
-testEmbedding :: Embedding DeltaA DeltaB
-testEmbedding = mkEmbedding testEmbedding'
+embeddingAB :: Embedding DeltaA DeltaB
+embeddingAB = mkEmbedding embeddingAB'
 
-testEmbedding' :: Embedding' DeltaA DeltaB
-testEmbedding' = Embedding'
+embeddingAB' :: Embedding' DeltaA DeltaB
+embeddingAB' = Embedding'
     { load = \b -> case b of
         Nothing -> Left $ toException NoPreimage
         Just (a,_) -> Right a
     , write = \a -> Just (a, 'X')
     , update = \_ _ da -> ChangeA da
+    }
+
+-- | Embedding into the diagonal
+diagonal :: (Delta da, Eq (Base da)) => Embedding da (da, da)
+diagonal = mkEmbedding diagonal'
+
+diagonal' :: (Delta da, Eq (Base da)) => Embedding' da (da, da)
+diagonal' = Embedding'
+    { load = \(a1, a2) ->
+        if a1 == a2
+        then Right a1
+        else Left $ toException NoPreimage
+    , write = \a -> (a, a)
+    , update = \_ _ da -> (da, da)
     }
 
 {-----------------------------------------------------------------------------
