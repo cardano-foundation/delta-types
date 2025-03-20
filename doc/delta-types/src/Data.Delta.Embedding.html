@@ -68,8 +68,8 @@ three components.
 * 'update' maps a delta type @da@ to a delta type @db@.
     For this mapping, both the value of type @a@ and a corresponding
     value of type @b@ are provided;
-    the delta types @da@ and @db@ are
-    relative to these values.
+    the delta types @da@ and @db@ are relative to these values.
+    In the definition of 'update', we can assume that @Right a = load b@.
 
 The embedding of one type into the other is characterized by the following
 properties:
@@ -94,7 +94,7 @@ properties:
 * The embedding of a delta __commutes with 'apply'__.
     We have
 
-        &gt; Just (apply da a) = load (apply (update a b da) b)
+        &gt; Right (apply da a) = load (apply (update a b da) b)
         &gt;     where Right a = load b
 
     However, since the embedding is redundant, we often have
@@ -356,18 +356,23 @@ Machine da1 db1 -&gt; Machine da2 db2 -&gt; Machine (da1, da2) (db1, db2)
 </span><span id="line-170"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621679072044"><span class="annot"><a href="#local-6989586621679072044"><span class="hs-identifier hs-var">a2</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679072045"><span class="annot"><a href="#local-6989586621679072045"><span class="hs-identifier hs-var">m2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><a href="#local-6989586621679072035"><span class="hs-identifier hs-type">project2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679072041"><span class="hs-identifier hs-type">b2</span></a></span><span>
 </span><span id="line-171"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679072042"><span class="hs-identifier hs-type">a1</span></a></span><span class="hs-special">,</span><span class="annot"><a href="#local-6989586621679072044"><span class="hs-identifier hs-type">a2</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Delta.Embedding.Internal.html#pairMachine"><span class="hs-identifier hs-type">pairMachine</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679072043"><span class="hs-identifier hs-type">m1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679072045"><span class="hs-identifier hs-type">m2</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-172"></span><span>
-</span><span id="line-173"></span><span class="annot"><span class="hs-comment">-- | Lift a sequence of updates through an 'Embedding'.</span></span><span>
-</span><span id="line-174"></span><span id="local-6989586621679071918"><span id="local-6989586621679071919"><span class="annot"><a href="Data.Delta.Embedding.html#liftUpdates"><span class="hs-identifier hs-type">liftUpdates</span></a></span><span>
-</span><span id="line-175"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Delta.Core.html#Delta"><span class="hs-identifier hs-type">Delta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071918"><span class="hs-identifier hs-type">da</span></a></span><span>
-</span><span id="line-176"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Delta.Embedding.html#Embedding"><span class="hs-identifier hs-type">Embedding</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071918"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071919"><span class="hs-identifier hs-type">db</span></a></span><span>
-</span><span id="line-177"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679071918"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-178"></span><span>    </span><span class="hs-comment">-- ^ List of deltas to apply.</span><span>
-</span><span id="line-179"></span><span>    </span><span class="hs-comment">-- The deltas are applied right-to-left; the 'head' is applied __last__.</span><span>
-</span><span id="line-180"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Delta.Core.html#Base"><span class="hs-identifier hs-type">Base</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071918"><span class="hs-identifier hs-type">da</span></a></span><span>
-</span><span id="line-181"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Base value to apply the deltas to.</span></span><span>
-</span><span id="line-182"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Delta.Core.html#Base"><span class="hs-identifier hs-type">Base</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071919"><span class="hs-identifier hs-type">db</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679071919"><span class="hs-identifier hs-type">db</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span></span></span><span>
-</span><span id="line-183"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ (Final base value, updates that were applied ('head' is __last__)).</span></span><span>
-</span><span id="line-184"></span><span id="liftUpdates"><span class="annot"><span class="annottext">liftUpdates :: forall da db.
+</span><span id="line-173"></span><span class="hs-comment">-- | Lift a sequence of updates through an 'Embedding'.</span><span>
+</span><span id="line-174"></span><span class="hs-comment">--</span><span>
+</span><span id="line-175"></span><span class="hs-comment">-- &gt;   (b, dbs) = liftUpdates (mkEmbedding embedding') das a</span><span>
+</span><span id="line-176"></span><span class="hs-comment">-- &gt; implies</span><span>
+</span><span id="line-177"></span><span class="hs-comment">-- &gt;   load embedding' b = Right (apply das a)</span><span>
+</span><span id="line-178"></span><span class="hs-comment">-- &gt;   b = apply dbs (write embedding' a)</span><span>
+</span><span id="line-179"></span><span id="local-6989586621679071918"><span id="local-6989586621679071919"><span class="annot"><a href="Data.Delta.Embedding.html#liftUpdates"><span class="hs-identifier hs-type">liftUpdates</span></a></span><span>
+</span><span id="line-180"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Delta.Core.html#Delta"><span class="hs-identifier hs-type">Delta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071918"><span class="hs-identifier hs-type">da</span></a></span><span>
+</span><span id="line-181"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Delta.Embedding.html#Embedding"><span class="hs-identifier hs-type">Embedding</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071918"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071919"><span class="hs-identifier hs-type">db</span></a></span><span>
+</span><span id="line-182"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679071918"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-183"></span><span>    </span><span class="hs-comment">-- ^ List of deltas to apply.</span><span>
+</span><span id="line-184"></span><span>    </span><span class="hs-comment">-- The deltas are applied right-to-left; the 'head' is applied __last__.</span><span>
+</span><span id="line-185"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Delta.Core.html#Base"><span class="hs-identifier hs-type">Base</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071918"><span class="hs-identifier hs-type">da</span></a></span><span>
+</span><span id="line-186"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Base value to apply the deltas to.</span></span><span>
+</span><span id="line-187"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Delta.Core.html#Base"><span class="hs-identifier hs-type">Base</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071919"><span class="hs-identifier hs-type">db</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679071919"><span class="hs-identifier hs-type">db</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-188"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ (Final base value, updates that were applied ('head' is __last__)).</span></span><span>
+</span><span id="line-189"></span><span id="liftUpdates"><span class="annot"><span class="annottext">liftUpdates :: forall da db.
 Delta da =&gt;
 Embedding da db -&gt; [da] -&gt; Base da -&gt; (Base db, [db])
 </span><a href="Data.Delta.Embedding.html#liftUpdates"><span class="hs-identifier hs-var hs-var">liftUpdates</span></a></span></span><span> </span><span class="annot"><a href="Data.Delta.Embedding.html#Embedding"><span class="hs-identifier hs-type">Embedding</span></a></span><span class="hs-special">{</span><span id="local-6989586621679072049"><span class="annot"><span class="annottext">Base da -&gt; Machine da db
@@ -376,7 +381,7 @@ inject :: Base da -&gt; Machine da db
 </span><a href="Data.Delta.Embedding.html#inject"><span class="hs-identifier hs-var hs-var">inject</span></a></span></span><span class="hs-special">}</span><span> </span><span id="local-6989586621679072050"><span class="annot"><span class="annottext">[da]
 </span><a href="#local-6989586621679072050"><span class="hs-identifier hs-var">das0</span></a></span></span><span> </span><span id="local-6989586621679072051"><span class="annot"><span class="annottext">Base da
 </span><a href="#local-6989586621679072051"><span class="hs-identifier hs-var">a0</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-185"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679072052"><span class="annot"><span class="annottext">Base db
+</span><span id="line-190"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679072052"><span class="annot"><span class="annottext">Base db
 </span><a href="#local-6989586621679072052"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679072053"><span class="annot"><span class="annottext">[db]
 </span><a href="#local-6989586621679072053"><span class="hs-identifier hs-var">dbs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Machine da db -&gt; Base da -&gt; [da] -&gt; (Base db, [db])
 forall {delta} {a}.
@@ -393,15 +398,15 @@ forall a. [a] -&gt; [a]
 forall a. [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">reverse</span></span><span> </span><span class="annot"><span class="annottext">[db]
 </span><a href="#local-6989586621679072053"><span class="hs-identifier hs-var">dbs</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-186"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-187"></span><span>    </span><span id="local-6989586621679072054"><span class="annot"><span class="annottext">go :: Machine delta a -&gt; Base delta -&gt; [delta] -&gt; (Base a, [a])
+</span><span id="line-191"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-192"></span><span>    </span><span id="local-6989586621679072054"><span class="annot"><span class="annottext">go :: Machine delta a -&gt; Base delta -&gt; [delta] -&gt; (Base a, [a])
 </span><a href="#local-6989586621679072054"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span id="local-6989586621679072058"><span class="annot"><span class="annottext">Machine delta a
 </span><a href="#local-6989586621679072058"><span class="hs-identifier hs-var">machine1</span></a></span></span><span> </span><span class="annot"><span class="annottext">Base delta
 </span><span class="hs-identifier">_</span></span><span>  </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Machine delta a -&gt; Base a
 forall da db. Machine da db -&gt; Base db
 </span><a href="Data.Delta.Embedding.Internal.html#state_"><span class="hs-identifier hs-var">state_</span></a></span><span> </span><span class="annot"><span class="annottext">Machine delta a
 </span><a href="#local-6989586621679072058"><span class="hs-identifier hs-var">machine1</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span>
-</span><span id="line-188"></span><span>    </span><span class="annot"><a href="#local-6989586621679072054"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679072059"><span class="annot"><span class="annottext">Machine delta a
+</span><span id="line-193"></span><span>    </span><span class="annot"><a href="#local-6989586621679072054"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679072059"><span class="annot"><span class="annottext">Machine delta a
 </span><a href="#local-6989586621679072059"><span class="hs-identifier hs-var">machine1</span></a></span></span><span> </span><span class="hs-glyph">!</span><span id="local-6989586621679072060"><span class="annot"><span class="annottext">Base delta
 </span><a href="#local-6989586621679072060"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679072061"><span class="annot"><span class="annottext">delta
 </span><a href="#local-6989586621679072061"><span class="hs-identifier hs-var">da</span></a></span></span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span id="local-6989586621679072062"><span class="annot"><span class="annottext">[delta]
@@ -411,8 +416,8 @@ forall da db. Machine da db -&gt; Base db
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span class="annot"><span class="annottext">[a]
 </span><a href="#local-6989586621679072065"><span class="hs-identifier hs-var">dbs</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-189"></span><span>      </span><span class="hs-keyword">where</span><span>
-</span><span id="line-190"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621679072063"><span class="annot"><span class="annottext">Base a
+</span><span id="line-194"></span><span>      </span><span class="hs-keyword">where</span><span>
+</span><span id="line-195"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621679072063"><span class="annot"><span class="annottext">Base a
 </span><a href="#local-6989586621679072063"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-special">,</span><span id="local-6989586621679072065"><span class="annot"><span class="annottext">[a]
 </span><a href="#local-6989586621679072065"><span class="hs-identifier hs-var">dbs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Machine delta a -&gt; Base delta -&gt; [delta] -&gt; (Base a, [a])
 </span><a href="#local-6989586621679072054"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Machine delta a
@@ -422,7 +427,7 @@ forall delta. Delta delta =&gt; delta -&gt; Base delta -&gt; Base delta
 </span><a href="#local-6989586621679072061"><span class="hs-identifier hs-var">da</span></a></span><span> </span><span class="annot"><span class="annottext">Base delta
 </span><a href="#local-6989586621679072060"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[delta]
 </span><a href="#local-6989586621679072062"><span class="hs-identifier hs-var">das</span></a></span><span>
-</span><span id="line-191"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621679072064"><span class="annot"><span class="annottext">a
+</span><span id="line-196"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621679072064"><span class="annot"><span class="annottext">a
 </span><a href="#local-6989586621679072064"><span class="hs-identifier hs-var">db</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679072066"><span class="annot"><span class="annottext">Machine delta a
 </span><a href="#local-6989586621679072066"><span class="hs-identifier hs-var">machine2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Machine delta a -&gt; (Base delta, delta) -&gt; (a, Machine delta a)
 forall da db. Machine da db -&gt; (Base da, da) -&gt; (db, Machine da db)
@@ -430,21 +435,21 @@ forall da db. Machine da db -&gt; (Base da, da) -&gt; (db, Machine da db)
 </span><a href="#local-6989586621679072059"><span class="hs-identifier hs-var">machine1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Base delta
 </span><a href="#local-6989586621679072060"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">delta
 </span><a href="#local-6989586621679072061"><span class="hs-identifier hs-var">da</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-192"></span><span>
-</span><span id="line-193"></span><span class="hs-comment">-- | Having an 'apply' function is equivalent to the existence</span><span>
-</span><span id="line-194"></span><span class="hs-comment">-- of a canonical embedding into the trivial 'Replace' delta type.</span><span>
-</span><span id="line-195"></span><span id="local-6989586621679071926"><span id="local-6989586621679071927"><span class="annot"><a href="Data.Delta.Embedding.html#replaceFromApply"><span class="hs-identifier hs-type">replaceFromApply</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Delta.Core.html#Delta"><span class="hs-identifier hs-type">Delta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071926"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679071927"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="Data.Delta.Core.html#Base"><span class="hs-identifier hs-type">Base</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071926"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Delta.Embedding.html#Embedding%27"><span class="hs-identifier hs-type">Embedding'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071926"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Delta.Core.html#Replace"><span class="hs-identifier hs-type">Replace</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071927"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
-</span><span id="line-196"></span><span id="replaceFromApply"><span class="annot"><span class="annottext">replaceFromApply :: forall da a. (Delta da, a ~ Base da) =&gt; Embedding' da (Replace a)
+</span><span id="line-197"></span><span>
+</span><span id="line-198"></span><span class="hs-comment">-- | Having an 'apply' function is equivalent to the existence</span><span>
+</span><span id="line-199"></span><span class="hs-comment">-- of a canonical embedding into the trivial 'Replace' delta type.</span><span>
+</span><span id="line-200"></span><span id="local-6989586621679071926"><span id="local-6989586621679071927"><span class="annot"><a href="Data.Delta.Embedding.html#replaceFromApply"><span class="hs-identifier hs-type">replaceFromApply</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Delta.Core.html#Delta"><span class="hs-identifier hs-type">Delta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071926"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679071927"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="Data.Delta.Core.html#Base"><span class="hs-identifier hs-type">Base</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071926"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Delta.Embedding.html#Embedding%27"><span class="hs-identifier hs-type">Embedding'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071926"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Delta.Core.html#Replace"><span class="hs-identifier hs-type">Replace</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071927"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-201"></span><span id="replaceFromApply"><span class="annot"><span class="annottext">replaceFromApply :: forall da a. (Delta da, a ~ Base da) =&gt; Embedding' da (Replace a)
 </span><a href="Data.Delta.Embedding.html#replaceFromApply"><span class="hs-identifier hs-var hs-var">replaceFromApply</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Data.Delta.Embedding.html#Embedding%27"><span class="hs-identifier hs-type">Embedding'</span></a></span><span>
-</span><span id="line-197"></span><span>    </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">load :: a -&gt; Either SomeException a
+</span><span id="line-202"></span><span>    </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">load :: a -&gt; Either SomeException a
 </span><a href="Data.Delta.Embedding.html#load"><span class="hs-identifier hs-var">load</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Either SomeException a
 forall a b. b -&gt; Either a b
 </span><span class="hs-identifier hs-var">Right</span></span><span>
-</span><span id="line-198"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">write :: a -&gt; a
+</span><span id="line-203"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">write :: a -&gt; a
 </span><a href="Data.Delta.Embedding.html#write"><span class="hs-identifier hs-var">write</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; a
 forall a. a -&gt; a
 </span><span class="hs-identifier hs-var">id</span></span><span>
-</span><span id="line-199"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">update :: a -&gt; a -&gt; da -&gt; Replace a
+</span><span id="line-204"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">update :: a -&gt; a -&gt; da -&gt; Replace a
 </span><a href="Data.Delta.Embedding.html#update"><span class="hs-identifier hs-var">update</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">a
 </span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679072081"><span class="annot"><span class="annottext">a
 </span><a href="#local-6989586621679072081"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679072082"><span class="annot"><span class="annottext">da
@@ -456,9 +461,9 @@ forall delta. Delta delta =&gt; delta -&gt; Base delta -&gt; Base delta
 </span><a href="#local-6989586621679072082"><span class="hs-identifier hs-var">da</span></a></span><span> </span><span class="annot"><span class="annottext">a
 Base da
 </span><a href="#local-6989586621679072081"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-200"></span><span>    </span><span class="hs-special">}</span><span>
-</span><span id="line-201"></span><span>
-</span><span id="line-202"></span><span class="hs-comment">{-
+</span><span id="line-205"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-206"></span><span>
+</span><span id="line-207"></span><span class="hs-comment">{-
 -- | Use the 'update' function of an 'Embedding' to convert
 -- one delta type to another.
 --
@@ -469,4 +474,4 @@ applyWithEmbedding
     =&gt; Embedding da db -&gt; (da -&gt; a -&gt; a)
 applyWithEmbedding e delta1 a = apply (update e a delta1) a
 -}</span><span>
-</span><span id="line-213"></span></pre></body></html>
+</span><span id="line-218"></span></pre></body></html>
