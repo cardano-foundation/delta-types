@@ -14,7 +14,6 @@ Embeddings of delta types.
 module Data.Delta.Embedding (
     -- $Embedding
       Embedding
-    , module Data.Semigroupoid
     , Embedding' (..)
     , mkEmbedding
     , fromEmbedding

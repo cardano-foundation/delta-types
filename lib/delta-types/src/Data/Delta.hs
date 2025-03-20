@@ -31,6 +31,8 @@ module Data.Delta (
 
     -- | Embeddings of delta types and helper functions.
     , module Data.Delta.Embedding
+
+    -- | Re-export "Data.Semigroupoid" for convenience.
     , module Data.Semigroupoid
     ) where
 
