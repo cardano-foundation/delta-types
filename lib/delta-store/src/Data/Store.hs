@@ -74,6 +74,9 @@ module Data.Store (
 
 import Prelude
 
+import Control.Applicative
+    ( liftA2
+    )
 import Control.Concurrent.Class.MonadSTM
     ( MonadSTM
     , atomically
