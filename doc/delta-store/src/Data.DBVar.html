@@ -1,0 +1,397 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# OPTIONS_GHC -Wno-redundant-constraints#-}</span><span>
+</span><span id="line-2"></span><span class="hs-comment">-- We intentionally specify more constraints than necessary for some exports.</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE RankNTypes #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE TypeOperators #-}</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Copyright: &#169; 2023 IOHK</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- License: Apache-2.0</span><span>
+</span><span id="line-11"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Data.DBVar.html"><span class="hs-identifier">Data.DBVar</span></a></span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-12"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Synopsis</span></span><span>
+</span><span id="line-13"></span><span>    </span><span class="hs-comment">-- | 'DBVar' represents a mutable variable whose value is kept in memory,</span><span>
+</span><span id="line-14"></span><span>    </span><span class="hs-comment">-- but which is written to the hard drive on every update.</span><span>
+</span><span id="line-15"></span><span>    </span><span class="hs-comment">-- This provides a convenient interface for persisting</span><span>
+</span><span id="line-16"></span><span>    </span><span class="hs-comment">-- values across program runs.</span><span>
+</span><span id="line-17"></span><span>    </span><span class="hs-comment">-- For efficient updates, delta encodings are used, see &quot;Data.Delta&quot;.</span><span>
+</span><span id="line-18"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-19"></span><span>    </span><span class="hs-comment">-- 'Store' represent a storage facility to which the 'DBVar'</span><span>
+</span><span id="line-20"></span><span>    </span><span class="hs-comment">-- is written.</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><span class="hs-comment">-- * DBVar</span></span><span>
+</span><span id="line-23"></span><span>      </span><span class="annot"><a href="Data.DBVar.html#DBVar"><span class="hs-identifier">DBVar</span></a></span><span>
+</span><span id="line-24"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.DBVar.html#readDBVar"><span class="hs-identifier">readDBVar</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.DBVar.html#updateDBVar"><span class="hs-identifier">updateDBVar</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.DBVar.html#modifyDBVar"><span class="hs-identifier">modifyDBVar</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.DBVar.html#modifyDBMaybe"><span class="hs-identifier">modifyDBMaybe</span></a></span><span>
+</span><span id="line-25"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.DBVar.html#initDBVar"><span class="hs-identifier">initDBVar</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.DBVar.html#loadDBVar"><span class="hs-identifier">loadDBVar</span></a></span><span>
+</span><span id="line-26"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Prelude</span></span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Concurrent.Class.MonadSTM</span></span><span>
+</span><span id="line-31"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">MonadSTM</span></span><span>
+</span><span id="line-32"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">atomically</span></span><span>
+</span><span id="line-33"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">newTVarIO</span></span><span>
+</span><span id="line-34"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">readTVar</span></span><span>
+</span><span id="line-35"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">readTVarIO</span></span><span>
+</span><span id="line-36"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">retry</span></span><span>
+</span><span id="line-37"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">writeTVar</span></span><span>
+</span><span id="line-38"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Class.MonadThrow</span></span><span>
+</span><span id="line-40"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">MonadEvaluate</span></span><span>
+</span><span id="line-41"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">MonadMask</span></span><span>
+</span><span id="line-42"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">MonadThrow</span></span><span>
+</span><span id="line-43"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">bracket</span></span><span>
+</span><span id="line-44"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">evaluate</span></span><span>
+</span><span id="line-45"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">mask</span></span><span>
+</span><span id="line-46"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">throwIO</span></span><span>
+</span><span id="line-47"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Delta</span></span><span>
+</span><span id="line-49"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Delta</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Store.html"><span class="hs-identifier">Data.Store</span></a></span><span>
+</span><span id="line-52"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Store.html#Store"><span class="hs-identifier">Store</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Store.html#UpdateStore"><span class="hs-identifier">UpdateStore</span></a></span><span>
+</span><span id="line-54"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    DBVar
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-59"></span><span class="hs-comment">-- | A 'DBVar'@ m delta@ is a mutable reference to a Haskell value of type @a@.</span><span>
+</span><span id="line-60"></span><span class="hs-comment">-- The type @delta@ is a delta encoding for this value type @a@,</span><span>
+</span><span id="line-61"></span><span class="hs-comment">-- that is we have @a ~ @'Base'@ delta@.</span><span>
+</span><span id="line-62"></span><span class="hs-comment">--</span><span>
+</span><span id="line-63"></span><span class="hs-comment">-- The Haskell value is cached in memory, in weak head normal form (WHNF).</span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- However, whenever the value is updated, a copy of will be written</span><span>
+</span><span id="line-65"></span><span class="hs-comment">-- to persistent storage like a file or database on the hard disk;</span><span>
+</span><span id="line-66"></span><span class="hs-comment">-- any particular storage is specified by the 'Store' type.</span><span>
+</span><span id="line-67"></span><span class="hs-comment">-- For efficient updates, the delta encoding @delta@ is used in the update.</span><span>
+</span><span id="line-68"></span><span class="hs-comment">--</span><span>
+</span><span id="line-69"></span><span class="hs-comment">-- Concurrency: 'DBVar' fully supports concurrent reads and updates.</span><span>
+</span><span id="line-70"></span><span class="hs-comment">--</span><span>
+</span><span id="line-71"></span><span class="hs-comment">-- * Updates are atomic and will block other updates.</span><span>
+</span><span id="line-72"></span><span class="hs-comment">-- * Reads will /not/ be blocked during an update</span><span>
+</span><span id="line-73"></span><span class="hs-comment">--   (except for a small moment where the new value atomically</span><span>
+</span><span id="line-74"></span><span class="hs-comment">--    replaces the old one).</span><span>
+</span><span id="line-75"></span><span class="hs-keyword">data</span><span> </span><span id="DBVar"><span class="annot"><a href="Data.DBVar.html#DBVar"><span class="hs-identifier hs-var">DBVar</span></a></span></span><span> </span><span id="local-6989586621679080019"><span class="annot"><a href="#local-6989586621679080019"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span id="local-6989586621679080020"><span class="annot"><a href="#local-6989586621679080020"><span class="hs-identifier hs-type">delta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="DBVar"><span class="annot"><a href="Data.DBVar.html#DBVar"><span class="hs-identifier hs-var">DBVar</span></a></span></span><span>
+</span><span id="line-76"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="readDBVar_"><span class="annot"><span class="annottext">forall (m :: * -&gt; *) delta. DBVar m delta -&gt; m (Base delta)
+</span><a href="Data.DBVar.html#readDBVar_"><span class="hs-identifier hs-var hs-var">readDBVar_</span></a></span></span><span>     </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679080019"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Base</span></span><span> </span><span class="annot"><a href="#local-6989586621679080020"><span class="hs-identifier hs-type">delta</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="modifyDBMaybe_"><span class="annot"><span class="annottext">forall (m :: * -&gt; *) delta.
+DBVar m delta -&gt; forall b. (Base delta -&gt; (Maybe delta, b)) -&gt; m b
+</span><a href="Data.DBVar.html#modifyDBMaybe_"><span class="hs-identifier hs-var hs-var">modifyDBMaybe_</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679080025"><span class="annot"><a href="#local-6989586621679080025"><span class="hs-identifier hs-type">b</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Base</span></span><span> </span><span class="annot"><a href="#local-6989586621679080020"><span class="hs-identifier hs-type">delta</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679080020"><span class="hs-identifier hs-type">delta</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679080025"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080019"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080025"><span class="hs-identifier hs-type">b</span></a></span><span>
+</span><span id="line-78"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-79"></span><span>
+</span><span id="line-80"></span><span class="annot"><span class="hs-comment">-- | Read the current value of the 'DBVar'.</span></span><span>
+</span><span id="line-81"></span><span id="local-6989586621679080029"><span id="local-6989586621679080031"><span id="local-6989586621679080032"><span class="annot"><a href="Data.DBVar.html#readDBVar"><span class="hs-identifier hs-type">readDBVar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Delta</span></span><span> </span><span class="annot"><a href="#local-6989586621679080029"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679080031"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Base</span></span><span> </span><span class="annot"><a href="#local-6989586621679080029"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.DBVar.html#DBVar"><span class="hs-identifier hs-type">DBVar</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080032"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080029"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080032"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080031"><span class="hs-identifier hs-type">a</span></a></span></span></span></span><span>
+</span><span id="line-82"></span><span id="readDBVar"><span class="annot"><span class="annottext">readDBVar :: forall da a (m :: * -&gt; *).
+(Delta da, a ~ Base da) =&gt;
+DBVar m da -&gt; m a
+</span><a href="Data.DBVar.html#readDBVar"><span class="hs-identifier hs-var hs-var">readDBVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DBVar m da -&gt; m a
+DBVar m da -&gt; m (Base da)
+forall (m :: * -&gt; *) delta. DBVar m delta -&gt; m (Base delta)
+</span><a href="Data.DBVar.html#readDBVar_"><span class="hs-identifier hs-var">readDBVar_</span></a></span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- | Update the value of the 'DBVar' using a delta encoding.</span><span>
+</span><span id="line-85"></span><span class="hs-comment">--</span><span>
+</span><span id="line-86"></span><span class="hs-comment">-- The new value will be evaluated to weak head normal form.</span><span>
+</span><span id="line-87"></span><span id="local-6989586621679080039"><span id="local-6989586621679080040"><span class="annot"><a href="Data.DBVar.html#updateDBVar"><span class="hs-identifier hs-type">updateDBVar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Delta</span></span><span> </span><span class="annot"><a href="#local-6989586621679080039"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679080040"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.DBVar.html#DBVar"><span class="hs-identifier hs-type">DBVar</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080040"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080039"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080039"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080040"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-88"></span><span id="updateDBVar"><span class="annot"><span class="annottext">updateDBVar :: forall da (m :: * -&gt; *).
+(Delta da, Monad m) =&gt;
+DBVar m da -&gt; da -&gt; m ()
+</span><a href="Data.DBVar.html#updateDBVar"><span class="hs-identifier hs-var hs-var">updateDBVar</span></a></span></span><span> </span><span id="local-6989586621679080157"><span class="annot"><span class="annottext">DBVar m da
+</span><a href="#local-6989586621679080157"><span class="hs-identifier hs-var">var</span></a></span></span><span> </span><span id="local-6989586621679080158"><span class="annot"><span class="annottext">da
+</span><a href="#local-6989586621679080158"><span class="hs-identifier hs-var">delta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DBVar m da -&gt; forall b. (Base da -&gt; (Maybe da, b)) -&gt; m b
+forall da (m :: * -&gt; *) a.
+(Delta da, Monad m, a ~ Base da) =&gt;
+DBVar m da -&gt; forall b. (a -&gt; (Maybe da, b)) -&gt; m b
+</span><a href="Data.DBVar.html#modifyDBMaybe"><span class="hs-identifier hs-var">modifyDBMaybe</span></a></span><span> </span><span class="annot"><span class="annottext">DBVar m da
+</span><a href="#local-6989586621679080157"><span class="hs-identifier hs-var">var</span></a></span><span> </span><span class="annot"><span class="annottext">((Base da -&gt; (Maybe da, ())) -&gt; m ())
+-&gt; (Base da -&gt; (Maybe da, ())) -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Base da
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">da -&gt; Maybe da
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">da
+</span><a href="#local-6989586621679080158"><span class="hs-identifier hs-var">delta</span></a></span><span class="hs-special">,</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span class="hs-comment">-- | Modify the value in a 'DBVar'.</span><span>
+</span><span id="line-91"></span><span class="hs-comment">--</span><span>
+</span><span id="line-92"></span><span class="hs-comment">-- The new value will be evaluated to weak head normal form.</span><span>
+</span><span id="line-93"></span><span id="local-6989586621679080051"><span id="local-6989586621679080052"><span id="local-6989586621679080053"><span id="local-6989586621679080054"><span class="annot"><a href="Data.DBVar.html#modifyDBVar"><span class="hs-identifier hs-type">modifyDBVar</span></a></span><span>
+</span><span id="line-94"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Delta</span></span><span> </span><span class="annot"><a href="#local-6989586621679080051"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679080052"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679080053"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Base</span></span><span> </span><span class="annot"><a href="#local-6989586621679080051"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-95"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.DBVar.html#DBVar"><span class="hs-identifier hs-type">DBVar</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080052"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080051"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080053"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080051"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679080054"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080052"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080054"><span class="hs-identifier hs-type">b</span></a></span></span></span></span></span><span>
+</span><span id="line-96"></span><span id="modifyDBVar"><span class="annot"><span class="annottext">modifyDBVar :: forall da (m :: * -&gt; *) a b.
+(Delta da, Monad m, a ~ Base da) =&gt;
+DBVar m da -&gt; (a -&gt; (da, b)) -&gt; m b
+</span><a href="Data.DBVar.html#modifyDBVar"><span class="hs-identifier hs-var hs-var">modifyDBVar</span></a></span></span><span> </span><span id="local-6989586621679080168"><span class="annot"><span class="annottext">DBVar m da
+</span><a href="#local-6989586621679080168"><span class="hs-identifier hs-var">var</span></a></span></span><span> </span><span id="local-6989586621679080169"><span class="annot"><span class="annottext">a -&gt; (da, b)
+</span><a href="#local-6989586621679080169"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DBVar m da -&gt; forall b. (a -&gt; (Maybe da, b)) -&gt; m b
+forall da (m :: * -&gt; *) a.
+(Delta da, Monad m, a ~ Base da) =&gt;
+DBVar m da -&gt; forall b. (a -&gt; (Maybe da, b)) -&gt; m b
+</span><a href="Data.DBVar.html#modifyDBMaybe"><span class="hs-identifier hs-var">modifyDBMaybe</span></a></span><span> </span><span class="annot"><span class="annottext">DBVar m da
+</span><a href="#local-6989586621679080168"><span class="hs-identifier hs-var">var</span></a></span><span> </span><span class="annot"><span class="annottext">((a -&gt; (Maybe da, b)) -&gt; m b) -&gt; (a -&gt; (Maybe da, b)) -&gt; m b
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679080170"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679080170"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679080171"><span class="annot"><span class="annottext">da
+</span><a href="#local-6989586621679080171"><span class="hs-identifier hs-var">da</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679080172"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679080172"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; (da, b)
+</span><a href="#local-6989586621679080169"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679080170"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">da -&gt; Maybe da
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">da
+</span><a href="#local-6989586621679080171"><span class="hs-identifier hs-var">da</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679080172"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span class="hs-comment">-- | Maybe modify the value in a 'DBVar'</span><span>
+</span><span id="line-99"></span><span class="hs-comment">--</span><span>
+</span><span id="line-100"></span><span class="hs-comment">-- If updated, the new value will be evaluated to weak head normal form.</span><span>
+</span><span id="line-101"></span><span id="local-6989586621679080044"><span id="local-6989586621679080045"><span id="local-6989586621679080046"><span class="annot"><a href="Data.DBVar.html#modifyDBMaybe"><span class="hs-identifier hs-type">modifyDBMaybe</span></a></span><span>
+</span><span id="line-102"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Delta</span></span><span> </span><span class="annot"><a href="#local-6989586621679080044"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679080045"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679080046"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Base</span></span><span> </span><span class="annot"><a href="#local-6989586621679080044"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-103"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.DBVar.html#DBVar"><span class="hs-identifier hs-type">DBVar</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080045"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080044"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679080043"><span class="annot"><a href="#local-6989586621679080043"><span class="hs-identifier hs-type">b</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080046"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679080044"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679080043"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080045"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080043"><span class="hs-identifier hs-type">b</span></a></span></span></span></span><span>
+</span><span id="line-104"></span><span id="modifyDBMaybe"><span class="annot"><span class="annottext">modifyDBMaybe :: forall da (m :: * -&gt; *) a.
+(Delta da, Monad m, a ~ Base da) =&gt;
+DBVar m da -&gt; forall b. (a -&gt; (Maybe da, b)) -&gt; m b
+</span><a href="Data.DBVar.html#modifyDBMaybe"><span class="hs-identifier hs-var hs-var">modifyDBMaybe</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DBVar m da -&gt; (a -&gt; (Maybe da, b)) -&gt; m b
+DBVar m da -&gt; forall b. (Base da -&gt; (Maybe da, b)) -&gt; m b
+forall (m :: * -&gt; *) delta.
+DBVar m delta -&gt; forall b. (Base delta -&gt; (Maybe delta, b)) -&gt; m b
+</span><a href="Data.DBVar.html#modifyDBMaybe_"><span class="hs-identifier hs-var">modifyDBMaybe_</span></a></span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span class="annot"><span class="hs-comment">-- | Initialize a new 'DBVar' for a given 'Store'.</span></span><span>
+</span><span id="line-107"></span><span id="local-6989586621679080063"><span id="local-6989586621679080068"><span id="local-6989586621679080069"><span class="annot"><a href="Data.DBVar.html#initDBVar"><span class="hs-identifier hs-type">initDBVar</span></a></span><span>
+</span><span id="line-108"></span><span>    </span><span class="hs-glyph">::</span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadSTM</span></span><span> </span><span class="annot"><a href="#local-6989586621679080063"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadThrow</span></span><span> </span><span class="annot"><a href="#local-6989586621679080063"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadEvaluate</span></span><span> </span><span class="annot"><a href="#local-6989586621679080063"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadMask</span></span><span> </span><span class="annot"><a href="#local-6989586621679080063"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-109"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Delta</span></span><span> </span><span class="annot"><a href="#local-6989586621679080068"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679080069"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Base</span></span><span> </span><span class="annot"><a href="#local-6989586621679080068"><span class="hs-identifier hs-type">da</span></a></span><span>
+</span><span id="line-110"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-111"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Store.html#UpdateStore"><span class="hs-identifier hs-type">UpdateStore</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080063"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080068"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="annot"><span class="hs-comment">-- ^ 'Store' for writing.</span></span><span>
+</span><span id="line-112"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080069"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-comment">-- ^ Initial value.</span></span><span>
+</span><span id="line-113"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080063"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DBVar.html#DBVar"><span class="hs-identifier hs-type">DBVar</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080063"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080068"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-114"></span><span id="initDBVar"><span class="annot"><span class="annottext">initDBVar :: forall (m :: * -&gt; *) da a.
+(MonadSTM m, MonadThrow m, MonadEvaluate m, MonadMask m, Delta da,
+ a ~ Base da) =&gt;
+UpdateStore m da -&gt; a -&gt; m (DBVar m da)
+</span><a href="Data.DBVar.html#initDBVar"><span class="hs-identifier hs-var hs-var">initDBVar</span></a></span></span><span> </span><span id="local-6989586621679080196"><span class="annot"><span class="annottext">UpdateStore m da
+</span><a href="#local-6989586621679080196"><span class="hs-identifier hs-var">store</span></a></span></span><span> </span><span id="local-6989586621679080197"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679080197"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-115"></span><span>    </span><span class="annot"><span class="annottext">Store m (Whole a) da -&gt; Base da -&gt; m ()
+forall (m :: * -&gt; *) (qa :: * -&gt; *) da.
+Store m qa da -&gt; Base da -&gt; m ()
+</span><a href="Data.Store.html#writeS"><span class="hs-identifier hs-var">writeS</span></a></span><span> </span><span class="annot"><span class="annottext">Store m (Whole a) da
+UpdateStore m da
+</span><a href="#local-6989586621679080196"><span class="hs-identifier hs-var">store</span></a></span><span> </span><span class="annot"><span class="annottext">a
+Base da
+</span><a href="#local-6989586621679080197"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-116"></span><span>    </span><span class="annot"><span class="annottext">(a -&gt; da -&gt; m ()) -&gt; a -&gt; m (DBVar m da)
+forall (m :: * -&gt; *) da a.
+(MonadSTM m, MonadThrow m, MonadMask m, MonadEvaluate m, Delta da,
+ a ~ Base da) =&gt;
+(a -&gt; da -&gt; m ()) -&gt; a -&gt; m (DBVar m da)
+</span><a href="Data.DBVar.html#newWithCache"><span class="hs-identifier hs-var">newWithCache</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Store m (Whole a) da -&gt; Maybe (Base da) -&gt; da -&gt; m ()
+forall (m :: * -&gt; *) (qa :: * -&gt; *) da.
+Store m qa da -&gt; Maybe (Base da) -&gt; da -&gt; m ()
+</span><a href="Data.Store.html#updateS"><span class="hs-identifier hs-var">updateS</span></a></span><span> </span><span class="annot"><span class="annottext">Store m (Whole a) da
+UpdateStore m da
+</span><a href="#local-6989586621679080196"><span class="hs-identifier hs-var">store</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe a -&gt; da -&gt; m ()) -&gt; (a -&gt; Maybe a) -&gt; a -&gt; da -&gt; m ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe a
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679080197"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-117"></span><span>
+</span><span id="line-118"></span><span class="hs-comment">-- | Create a 'DBVar' by loading its value from an existing 'Store'.</span><span>
+</span><span id="line-119"></span><span class="hs-comment">-- Throws an exception if the value cannot be loaded.</span><span>
+</span><span id="line-120"></span><span id="local-6989586621679080089"><span id="local-6989586621679080090"><span class="annot"><a href="Data.DBVar.html#loadDBVar"><span class="hs-identifier hs-type">loadDBVar</span></a></span><span>
+</span><span id="line-121"></span><span>    </span><span class="hs-glyph">::</span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadSTM</span></span><span> </span><span class="annot"><a href="#local-6989586621679080089"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadThrow</span></span><span> </span><span class="annot"><a href="#local-6989586621679080089"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadEvaluate</span></span><span> </span><span class="annot"><a href="#local-6989586621679080089"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadMask</span></span><span> </span><span class="annot"><a href="#local-6989586621679080089"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-122"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Delta</span></span><span> </span><span class="annot"><a href="#local-6989586621679080090"><span class="hs-identifier hs-type">da</span></a></span><span>
+</span><span id="line-123"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-124"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Store.html#UpdateStore"><span class="hs-identifier hs-type">UpdateStore</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080089"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080090"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="annot"><span class="hs-comment">-- ^ 'Store' for writing and for reading the initial value.</span></span><span>
+</span><span id="line-125"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080089"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DBVar.html#DBVar"><span class="hs-identifier hs-type">DBVar</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080089"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080090"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-126"></span><span id="loadDBVar"><span class="annot"><span class="annottext">loadDBVar :: forall (m :: * -&gt; *) da.
+(MonadSTM m, MonadThrow m, MonadEvaluate m, MonadMask m,
+ Delta da) =&gt;
+UpdateStore m da -&gt; m (DBVar m da)
+</span><a href="Data.DBVar.html#loadDBVar"><span class="hs-identifier hs-var hs-var">loadDBVar</span></a></span></span><span> </span><span id="local-6989586621679080218"><span class="annot"><span class="annottext">UpdateStore m da
+</span><a href="#local-6989586621679080218"><span class="hs-identifier hs-var">store</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-127"></span><span>    </span><span class="annot"><span class="annottext">UpdateStore m da -&gt; m (Either SomeException (Base da))
+forall (m :: * -&gt; *) (qa :: * -&gt; *) da.
+Store m qa da -&gt; m (Either SomeException (Base da))
+</span><a href="Data.Store.html#loadS"><span class="hs-identifier hs-var">loadS</span></a></span><span> </span><span class="annot"><span class="annottext">UpdateStore m da
+</span><a href="#local-6989586621679080218"><span class="hs-identifier hs-var">store</span></a></span><span> </span><span class="annot"><span class="annottext">m (Either SomeException (Base da))
+-&gt; (Either SomeException (Base da) -&gt; m (DBVar m da))
+-&gt; m (DBVar m da)
+forall a b. m a -&gt; (a -&gt; m b) -&gt; m b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-128"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span>  </span><span id="local-6989586621679080220"><span class="annot"><span class="annottext">SomeException
+</span><a href="#local-6989586621679080220"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">SomeException -&gt; m (DBVar m da)
+forall e a. Exception e =&gt; e -&gt; m a
+forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
+</span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="annot"><span class="annottext">SomeException
+</span><a href="#local-6989586621679080220"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-129"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679080221"><span class="annot"><span class="annottext">Base da
+</span><a href="#local-6989586621679080221"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Base da -&gt; da -&gt; m ()) -&gt; Base da -&gt; m (DBVar m da)
+forall (m :: * -&gt; *) da a.
+(MonadSTM m, MonadThrow m, MonadMask m, MonadEvaluate m, Delta da,
+ a ~ Base da) =&gt;
+(a -&gt; da -&gt; m ()) -&gt; a -&gt; m (DBVar m da)
+</span><a href="Data.DBVar.html#newWithCache"><span class="hs-identifier hs-var">newWithCache</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">UpdateStore m da -&gt; Maybe (Base da) -&gt; da -&gt; m ()
+forall (m :: * -&gt; *) (qa :: * -&gt; *) da.
+Store m qa da -&gt; Maybe (Base da) -&gt; da -&gt; m ()
+</span><a href="Data.Store.html#updateS"><span class="hs-identifier hs-var">updateS</span></a></span><span> </span><span class="annot"><span class="annottext">UpdateStore m da
+</span><a href="#local-6989586621679080218"><span class="hs-identifier hs-var">store</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (Base da) -&gt; da -&gt; m ())
+-&gt; (Base da -&gt; Maybe (Base da)) -&gt; Base da -&gt; da -&gt; m ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Base da -&gt; Maybe (Base da)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Base da
+</span><a href="#local-6989586621679080221"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-130"></span><span>
+</span><span id="line-131"></span><span class="hs-comment">-- | Create 'DBVar' from an initial value and an update function</span><span>
+</span><span id="line-132"></span><span class="hs-comment">-- using a 'TVar' as in-memory cache.</span><span>
+</span><span id="line-133"></span><span class="hs-comment">--</span><span>
+</span><span id="line-134"></span><span class="hs-comment">-- Space: The value in the 'TVar' will be evaluated to weak head normal form.</span><span>
+</span><span id="line-135"></span><span class="hs-comment">--</span><span>
+</span><span id="line-136"></span><span class="hs-comment">-- Concurrency: The update function needs to be atomic even in the presence</span><span>
+</span><span id="line-137"></span><span class="hs-comment">-- of asynchronous exceptions.</span><span>
+</span><span id="line-138"></span><span id="local-6989586621679080080"><span id="local-6989586621679080081"><span id="local-6989586621679080082"><span class="annot"><a href="Data.DBVar.html#newWithCache"><span class="hs-identifier hs-type">newWithCache</span></a></span><span>
+</span><span id="line-139"></span><span>    </span><span class="hs-glyph">::</span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadSTM</span></span><span> </span><span class="annot"><a href="#local-6989586621679080080"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadThrow</span></span><span> </span><span class="annot"><a href="#local-6989586621679080080"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadMask</span></span><span> </span><span class="annot"><a href="#local-6989586621679080080"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadEvaluate</span></span><span> </span><span class="annot"><a href="#local-6989586621679080080"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-140"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Delta</span></span><span> </span><span class="annot"><a href="#local-6989586621679080081"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679080082"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Base</span></span><span> </span><span class="annot"><a href="#local-6989586621679080081"><span class="hs-identifier hs-type">da</span></a></span><span>
+</span><span id="line-141"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-142"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080082"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080081"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080080"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080082"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080080"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.DBVar.html#DBVar"><span class="hs-identifier hs-type">DBVar</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080080"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080081"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-143"></span><span id="newWithCache"><span class="annot"><span class="annottext">newWithCache :: forall (m :: * -&gt; *) da a.
+(MonadSTM m, MonadThrow m, MonadMask m, MonadEvaluate m, Delta da,
+ a ~ Base da) =&gt;
+(a -&gt; da -&gt; m ()) -&gt; a -&gt; m (DBVar m da)
+</span><a href="Data.DBVar.html#newWithCache"><span class="hs-identifier hs-var hs-var">newWithCache</span></a></span></span><span> </span><span id="local-6989586621679080241"><span class="annot"><span class="annottext">a -&gt; da -&gt; m ()
+</span><a href="#local-6989586621679080241"><span class="hs-identifier hs-var">update</span></a></span></span><span> </span><span id="local-6989586621679080242"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679080242"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-144"></span><span>    </span><span id="local-6989586621679080243"><span class="annot"><a href="#local-6989586621679080243"><span class="hs-identifier hs-var">cache</span></a></span></span><span>  </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">a -&gt; m (TVar m a)
+forall a. a -&gt; m (TVar m a)
+forall (m :: * -&gt; *) a. MonadSTM m =&gt; a -&gt; m (TVar m a)
+</span><span class="hs-identifier hs-var">newTVarIO</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679080242"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-145"></span><span>    </span><span id="local-6989586621679080244"><span class="annot"><a href="#local-6989586621679080244"><span class="hs-identifier hs-var">locked</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="hs-identifier hs-type">newTVarIO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">False</span></span><span>   </span><span class="hs-comment">-- lock for updating the cache</span><span>
+</span><span id="line-146"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Data.DBVar.html#DBVar"><span class="hs-identifier hs-type">DBVar</span></a></span><span>
+</span><span id="line-147"></span><span>        </span><span class="hs-special">{</span><span> </span><span class="annot"><a href="Data.DBVar.html#readDBVar_"><span class="hs-identifier hs-var">readDBVar_</span></a></span><span>     </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">readTVarIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679080243"><span class="hs-identifier hs-type">cache</span></a></span><span>
+</span><span id="line-148"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.DBVar.html#modifyDBMaybe_"><span class="hs-identifier hs-var">modifyDBMaybe_</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679080271"><span class="annot"><span class="annottext">Base da -&gt; (Maybe da, b)
+</span><a href="#local-6989586621679080271"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-149"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679080272"><span class="annot"><span class="annottext">before :: m a
+</span><a href="#local-6989586621679080272"><span class="hs-identifier hs-var hs-var">before</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">STM m a -&gt; m a
+forall a. HasCallStack =&gt; STM m a -&gt; m a
+forall (m :: * -&gt; *) a.
+(MonadSTM m, HasCallStack) =&gt;
+STM m a -&gt; m a
+</span><span class="hs-identifier hs-var">atomically</span></span><span> </span><span class="annot"><span class="annottext">(STM m a -&gt; m a) -&gt; STM m a -&gt; m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-150"></span><span>                    </span><span class="annot"><span class="annottext">TVar m Bool -&gt; STM m Bool
+forall a. TVar m a -&gt; STM m a
+forall (m :: * -&gt; *) a. MonadSTM m =&gt; TVar m a -&gt; STM m a
+</span><span class="hs-identifier hs-var">readTVar</span></span><span> </span><span class="annot"><span class="annottext">TVar m Bool
+</span><a href="#local-6989586621679080244"><span class="hs-identifier hs-var">locked</span></a></span><span> </span><span class="annot"><span class="annottext">STM m Bool -&gt; (Bool -&gt; STM m a) -&gt; STM m a
+forall a b. STM m a -&gt; (a -&gt; STM m b) -&gt; STM m b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-151"></span><span>                        </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">STM m a
+forall a. STM m a
+forall (m :: * -&gt; *) a. MonadSTM m =&gt; STM m a
+</span><span class="hs-identifier hs-var">retry</span></span><span>
+</span><span id="line-152"></span><span>                        </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-153"></span><span>                            </span><span class="annot"><span class="annottext">TVar m Bool -&gt; Bool -&gt; STM m ()
+forall a. TVar m a -&gt; a -&gt; STM m ()
+forall (m :: * -&gt; *) a. MonadSTM m =&gt; TVar m a -&gt; a -&gt; STM m ()
+</span><span class="hs-identifier hs-var">writeTVar</span></span><span> </span><span class="annot"><span class="annottext">TVar m Bool
+</span><a href="#local-6989586621679080244"><span class="hs-identifier hs-var">locked</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-154"></span><span>                            </span><span class="annot"><span class="annottext">TVar m a -&gt; STM m a
+forall a. TVar m a -&gt; STM m a
+forall (m :: * -&gt; *) a. MonadSTM m =&gt; TVar m a -&gt; STM m a
+</span><span class="hs-identifier hs-var">readTVar</span></span><span> </span><span class="annot"><span class="annottext">TVar m a
+</span><a href="#local-6989586621679080243"><span class="hs-identifier hs-var">cache</span></a></span><span>
+</span><span id="line-155"></span><span>                </span><span id="local-6989586621679080273"><span class="annot"><span class="annottext">after :: a -&gt; m ()
+</span><a href="#local-6989586621679080273"><span class="hs-identifier hs-var hs-var">after</span></a></span></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">STM m () -&gt; m ()
+forall a. HasCallStack =&gt; STM m a -&gt; m a
+forall (m :: * -&gt; *) a.
+(MonadSTM m, HasCallStack) =&gt;
+STM m a -&gt; m a
+</span><span class="hs-identifier hs-var">atomically</span></span><span> </span><span class="annot"><span class="annottext">(STM m () -&gt; m ()) -&gt; STM m () -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TVar m Bool -&gt; Bool -&gt; STM m ()
+forall a. TVar m a -&gt; a -&gt; STM m ()
+forall (m :: * -&gt; *) a. MonadSTM m =&gt; TVar m a -&gt; a -&gt; STM m ()
+</span><span class="hs-identifier hs-var">writeTVar</span></span><span> </span><span class="annot"><span class="annottext">TVar m Bool
+</span><a href="#local-6989586621679080244"><span class="hs-identifier hs-var">locked</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-156"></span><span>                </span><span id="local-6989586621679080274"><span class="annot"><span class="annottext">action :: a -&gt; m b
+</span><a href="#local-6989586621679080274"><span class="hs-identifier hs-var hs-var">action</span></a></span></span><span> </span><span id="local-6989586621679080275"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679080275"><span class="hs-identifier hs-var">old</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-157"></span><span>                    </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679080276"><span class="annot"><span class="annottext">Maybe da
+</span><a href="#local-6989586621679080276"><span class="hs-identifier hs-var hs-var">mdelta</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679080277"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679080277"><span class="hs-identifier hs-var hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Base da -&gt; (Maybe da, b)
+</span><a href="#local-6989586621679080271"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+Base da
+</span><a href="#local-6989586621679080275"><span class="hs-identifier hs-var">old</span></a></span><span>
+</span><span id="line-158"></span><span>                    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Maybe da
+</span><a href="#local-6989586621679080276"><span class="hs-identifier hs-var">mdelta</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-159"></span><span>                        </span><span class="annot"><span class="annottext">Maybe da
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">() -&gt; m ()
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-160"></span><span>                        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679080278"><span class="annot"><span class="annottext">da
+</span><a href="#local-6989586621679080278"><span class="hs-identifier hs-var">delta</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-161"></span><span>                            </span><span id="local-6989586621679080279"><span class="annot"><a href="#local-6989586621679080279"><span class="hs-identifier hs-var">new</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">a -&gt; m a
+forall a. a -&gt; m a
+forall (m :: * -&gt; *) a. MonadEvaluate m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">evaluate</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; m a) -&gt; a -&gt; m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">da -&gt; Base da -&gt; Base da
+forall delta. Delta delta =&gt; delta -&gt; Base delta -&gt; Base delta
+</span><span class="hs-identifier hs-var">apply</span></span><span> </span><span class="annot"><span class="annottext">da
+</span><a href="#local-6989586621679080278"><span class="hs-identifier hs-var">delta</span></a></span><span> </span><span class="annot"><span class="annottext">a
+Base da
+</span><a href="#local-6989586621679080275"><span class="hs-identifier hs-var">old</span></a></span><span>
+</span><span id="line-162"></span><span>                            </span><span class="annot"><span class="hs-identifier hs-type">mask</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679080281"><span class="annot"><span class="annottext">forall a. m a -&gt; m a
+</span><a href="#local-6989586621679080281"><span class="hs-identifier hs-var">restore</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-163"></span><span>                                </span><span class="hs-comment">-- We mask asynchronous exceptions here</span><span>
+</span><span id="line-164"></span><span>                                </span><span class="hs-comment">-- to ensure that the TVar will be updated</span><span>
+</span><span id="line-165"></span><span>                                </span><span class="hs-comment">-- whenever @update@ succeeds without exception.</span><span>
+</span><span id="line-166"></span><span>                                </span><span class="annot"><span class="annottext">m () -&gt; m ()
+forall a. m a -&gt; m a
+</span><a href="#local-6989586621679080281"><span class="hs-identifier hs-var">restore</span></a></span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; da -&gt; m ()
+</span><a href="#local-6989586621679080241"><span class="hs-identifier hs-var">update</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679080275"><span class="hs-identifier hs-var">old</span></a></span><span> </span><span class="annot"><span class="annottext">da
+</span><a href="#local-6989586621679080278"><span class="hs-identifier hs-var">delta</span></a></span><span>
+</span><span id="line-167"></span><span>                                </span><span class="annot"><span class="annottext">STM m () -&gt; m ()
+forall a. HasCallStack =&gt; STM m a -&gt; m a
+forall (m :: * -&gt; *) a.
+(MonadSTM m, HasCallStack) =&gt;
+STM m a -&gt; m a
+</span><span class="hs-identifier hs-var">atomically</span></span><span> </span><span class="annot"><span class="annottext">(STM m () -&gt; m ()) -&gt; STM m () -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TVar m a -&gt; a -&gt; STM m ()
+forall a. TVar m a -&gt; a -&gt; STM m ()
+forall (m :: * -&gt; *) a. MonadSTM m =&gt; TVar m a -&gt; a -&gt; STM m ()
+</span><span class="hs-identifier hs-var">writeTVar</span></span><span> </span><span class="annot"><span class="annottext">TVar m a
+</span><a href="#local-6989586621679080243"><span class="hs-identifier hs-var">cache</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679080279"><span class="hs-identifier hs-var">new</span></a></span><span>
+</span><span id="line-168"></span><span>                    </span><span class="annot"><span class="annottext">b -&gt; m b
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679080277"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-169"></span><span>            </span><span class="annot"><span class="annottext">m a -&gt; (a -&gt; m ()) -&gt; (a -&gt; m b) -&gt; m b
+forall a b c. m a -&gt; (a -&gt; m b) -&gt; (a -&gt; m c) -&gt; m c
+forall (m :: * -&gt; *) a b c.
+MonadThrow m =&gt;
+m a -&gt; (a -&gt; m b) -&gt; (a -&gt; m c) -&gt; m c
+</span><span class="hs-identifier hs-var">bracket</span></span><span> </span><span class="annot"><span class="annottext">m a
+</span><a href="#local-6989586621679080272"><span class="hs-identifier hs-var">before</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; m ()
+</span><a href="#local-6989586621679080273"><span class="hs-identifier hs-var">after</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; m b
+</span><a href="#local-6989586621679080274"><span class="hs-identifier hs-var">action</span></a></span><span>
+</span><span id="line-170"></span><span>        </span><span class="hs-special">}</span><span>
+</span><span id="line-171"></span></pre></body></html>

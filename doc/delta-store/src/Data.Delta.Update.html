@@ -1,0 +1,352 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE TypeOperators #-}</span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- Copyright: &#169; 2023 IOHK</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- License: Apache-2.0</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Data.Delta.Update.html"><span class="hs-identifier">Data.Delta.Update</span></a></span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-8"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Synopsis</span></span><span>
+</span><span id="line-9"></span><span>    </span><span class="hs-comment">-- | 'Update' represents a computation which produces a delta and</span><span>
+</span><span id="line-10"></span><span>    </span><span class="hs-comment">-- a result.</span><span>
+</span><span id="line-11"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-12"></span><span>    </span><span class="hs-comment">-- Note: This module is preliminary.</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Update</span></span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Type</span></span><span>
+</span><span id="line-16"></span><span>      </span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier">Update</span></a></span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** View</span></span><span>
+</span><span id="line-18"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#runUpdate"><span class="hs-identifier">runUpdate</span></a></span><span>
+</span><span id="line-19"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#applyUpdate"><span class="hs-identifier">applyUpdate</span></a></span><span>
+</span><span id="line-20"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#onDBVar"><span class="hs-identifier">onDBVar</span></a></span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Combinators</span></span><span>
+</span><span id="line-22"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#nop"><span class="hs-identifier">nop</span></a></span><span>
+</span><span id="line-23"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#update"><span class="hs-identifier">update</span></a></span><span>
+</span><span id="line-24"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#updateWithResult"><span class="hs-identifier">updateWithResult</span></a></span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Helpers</span></span><span>
+</span><span id="line-26"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#updateWithError"><span class="hs-identifier">updateWithError</span></a></span><span>
+</span><span id="line-27"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#updateWithResultAndError"><span class="hs-identifier">updateWithResultAndError</span></a></span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#updateMany"><span class="hs-identifier">updateMany</span></a></span><span>
+</span><span id="line-29"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#updateField"><span class="hs-identifier">updateField</span></a></span><span>
+</span><span id="line-30"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Prelude</span></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.DBVar.html"><span class="hs-identifier">Data.DBVar</span></a></span><span>
+</span><span id="line-35"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.DBVar.html#DBVar"><span class="hs-identifier">DBVar</span></a></span><span>
+</span><span id="line-36"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.DBVar.html#modifyDBMaybe"><span class="hs-identifier">modifyDBMaybe</span></a></span><span>
+</span><span id="line-37"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Delta</span></span><span>
+</span><span id="line-39"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Delta</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    Update
+    Type, View
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-46"></span><span class="hs-comment">-- | A computation which inspects a value @a ~ Base da@</span><span>
+</span><span id="line-47"></span><span class="hs-comment">-- and produces a delta @da@ and a result of type @r@.</span><span>
+</span><span id="line-48"></span><span class="hs-comment">--</span><span>
+</span><span id="line-49"></span><span class="hs-comment">-- Similar to the 'Control.Monad.Trans.State.State' computation,</span><span>
+</span><span id="line-50"></span><span class="hs-comment">-- but involving 'Delta' types.</span><span>
+</span><span id="line-51"></span><span class="hs-keyword">newtype</span><span> </span><span id="Update"><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-var">Update</span></a></span></span><span> </span><span id="local-6989586621679080282"><span class="annot"><a href="#local-6989586621679080282"><span class="hs-identifier hs-type">da</span></a></span></span><span> </span><span id="local-6989586621679080283"><span class="annot"><a href="#local-6989586621679080283"><span class="hs-identifier hs-type">r</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Update"><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-var">Update</span></a></span></span><span> </span><span class="hs-special">{</span><span> </span><span id="runUpdate_"><span class="annot"><span class="annottext">forall da r. Update da r -&gt; Base da -&gt; (Maybe da, r)
+</span><a href="Data.Delta.Update.html#runUpdate_"><span class="hs-identifier hs-var hs-var">runUpdate_</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Base</span></span><span> </span><span class="annot"><a href="#local-6989586621679080282"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679080282"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679080283"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">}</span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="annot"><span class="hs-comment">-- | Run the 'Update' computation.</span></span><span>
+</span><span id="line-54"></span><span id="local-6989586621679080288"><span id="local-6989586621679080289"><span id="local-6989586621679080290"><span class="annot"><a href="Data.Delta.Update.html#runUpdate"><span class="hs-identifier hs-type">runUpdate</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080288"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Base</span></span><span> </span><span class="annot"><a href="#local-6989586621679080289"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080289"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080290"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080288"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679080289"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679080290"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-55"></span><span id="runUpdate"><span class="annot"><span class="annottext">runUpdate :: forall a da r. (a ~ Base da) =&gt; Update da r -&gt; a -&gt; (Maybe da, r)
+</span><a href="Data.Delta.Update.html#runUpdate"><span class="hs-identifier hs-var hs-var">runUpdate</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Update da r -&gt; a -&gt; (Maybe da, r)
+Update da r -&gt; Base da -&gt; (Maybe da, r)
+forall da r. Update da r -&gt; Base da -&gt; (Maybe da, r)
+</span><a href="Data.Delta.Update.html#runUpdate_"><span class="hs-identifier hs-var">runUpdate_</span></a></span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="annot"><span class="hs-comment">-- | Semantics.</span></span><span>
+</span><span id="line-58"></span><span id="local-6989586621679080297"><span id="local-6989586621679080299"><span id="local-6989586621679080300"><span class="annot"><a href="Data.Delta.Update.html#applyUpdate"><span class="hs-identifier hs-type">applyUpdate</span></a></span><span>
+</span><span id="line-59"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Delta</span></span><span> </span><span class="annot"><a href="#local-6989586621679080297"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679080299"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Base</span></span><span> </span><span class="annot"><a href="#local-6989586621679080297"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-60"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080297"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080300"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080299"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080299"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span class="annot"><a href="#local-6989586621679080300"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-61"></span><span id="applyUpdate"><span class="annot"><span class="annottext">applyUpdate :: forall da a r.
+(Delta da, a ~ Base da) =&gt;
+Update da r -&gt; a -&gt; (a, r)
+</span><a href="Data.Delta.Update.html#applyUpdate"><span class="hs-identifier hs-var hs-var">applyUpdate</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span id="local-6989586621679080402"><span class="annot"><span class="annottext">Base da -&gt; (Maybe da, r)
+</span><a href="#local-6989586621679080402"><span class="hs-identifier hs-var">g</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679080403"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679080403"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-62"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Base da -&gt; (Maybe da, r)
+</span><a href="#local-6989586621679080402"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">a
+Base da
+</span><a href="#local-6989586621679080403"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-63"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621679080404"><span class="annot"><span class="annottext">Maybe da
+</span><a href="#local-6989586621679080404"><span class="hs-identifier hs-var">da</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679080405"><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679080405"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe da
+</span><a href="#local-6989586621679080404"><span class="hs-identifier hs-var">da</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe da -&gt; Base (Maybe da) -&gt; Base (Maybe da)
+forall delta. Delta delta =&gt; delta -&gt; Base delta -&gt; Base delta
+</span><span class="hs-operator hs-var">`apply`</span></span><span> </span><span class="annot"><span class="annottext">a
+Base (Maybe da)
+</span><a href="#local-6989586621679080403"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679080405"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span class="annot"><span class="hs-comment">-- | Apply an 'Update' to a 'DBVar'.</span></span><span>
+</span><span id="line-66"></span><span id="local-6989586621679080306"><span id="local-6989586621679080307"><span id="local-6989586621679080309"><span class="annot"><a href="Data.Delta.Update.html#onDBVar"><span class="hs-identifier hs-type">onDBVar</span></a></span><span>
+</span><span id="line-67"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679080306"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Delta</span></span><span> </span><span class="annot"><a href="#local-6989586621679080307"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-68"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.DBVar.html#DBVar"><span class="hs-identifier hs-type">DBVar</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080306"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080307"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080307"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080309"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080306"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080309"><span class="hs-identifier hs-type">r</span></a></span></span></span></span><span>
+</span><span id="line-69"></span><span id="onDBVar"><span class="annot"><span class="annottext">onDBVar :: forall (m :: * -&gt; *) da r.
+(Monad m, Delta da) =&gt;
+DBVar m da -&gt; Update da r -&gt; m r
+</span><a href="Data.Delta.Update.html#onDBVar"><span class="hs-identifier hs-var hs-var">onDBVar</span></a></span></span><span> </span><span id="local-6989586621679080413"><span class="annot"><span class="annottext">DBVar m da
+</span><a href="#local-6989586621679080413"><span class="hs-identifier hs-var">dbvar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DBVar m da -&gt; forall b. (Base da -&gt; (Maybe da, b)) -&gt; m b
+forall da (m :: * -&gt; *) a.
+(Delta da, Monad m, a ~ Base da) =&gt;
+DBVar m da -&gt; forall b. (a -&gt; (Maybe da, b)) -&gt; m b
+</span><a href="Data.DBVar.html#modifyDBMaybe"><span class="hs-identifier hs-var">modifyDBMaybe</span></a></span><span> </span><span class="annot"><span class="annottext">DBVar m da
+</span><a href="#local-6989586621679080413"><span class="hs-identifier hs-var">dbvar</span></a></span><span> </span><span class="annot"><span class="annottext">((Base da -&gt; (Maybe da, r)) -&gt; m r)
+-&gt; (Update da r -&gt; Base da -&gt; (Maybe da, r)) -&gt; Update da r -&gt; m r
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Update da r -&gt; Base da -&gt; (Maybe da, r)
+forall a da r. (a ~ Base da) =&gt; Update da r -&gt; a -&gt; (Maybe da, r)
+</span><a href="Data.Delta.Update.html#runUpdate"><span class="hs-identifier hs-var">runUpdate</span></a></span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    Combinators
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-74"></span><span class="annot"><span class="hs-comment">-- | Map results.</span></span><span>
+</span><span id="line-75"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679080326"><span id="local-6989586621679080417"><span class="annot"><span class="hs-identifier hs-type">Functor</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080326"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-76"></span><span>    </span><span id="local-6989586621679080421"><span class="annot"><span class="annottext">fmap :: forall a b. (a -&gt; b) -&gt; Update da a -&gt; Update da b
+</span><span class="hs-identifier hs-var hs-var hs-var">fmap</span></span></span><span> </span><span id="local-6989586621679080422"><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621679080422"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span id="local-6989586621679080423"><span class="annot"><span class="annottext">Base da -&gt; (Maybe da, a)
+</span><a href="#local-6989586621679080423"><span class="hs-identifier hs-var">g</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Base da -&gt; (Maybe da, b)) -&gt; Update da b
+forall da r. (Base da -&gt; (Maybe da, r)) -&gt; Update da r
+</span><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-var">Update</span></a></span><span> </span><span class="annot"><span class="annottext">((Base da -&gt; (Maybe da, b)) -&gt; Update da b)
+-&gt; (Base da -&gt; (Maybe da, b)) -&gt; Update da b
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679080424"><span class="annot"><span class="annottext">Base da
+</span><a href="#local-6989586621679080424"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-77"></span><span>        </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Base da -&gt; (Maybe da, a)
+</span><a href="#local-6989586621679080423"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">Base da
+</span><a href="#local-6989586621679080424"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-78"></span><span>            </span><span class="hs-special">(</span><span id="local-6989586621679080425"><span class="annot"><span class="annottext">Maybe da
+</span><a href="#local-6989586621679080425"><span class="hs-identifier hs-var">da</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679080426"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679080426"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe da
+</span><a href="#local-6989586621679080425"><span class="hs-identifier hs-var">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621679080422"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679080426"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-79"></span><span>
+</span><span id="line-80"></span><span class="hs-comment">-- | No operation.</span><span>
+</span><span id="line-81"></span><span class="hs-comment">--</span><span>
+</span><span id="line-82"></span><span class="hs-comment">-- Use the 'Functor' instance, specifically '(&lt;$)'</span><span>
+</span><span id="line-83"></span><span class="hs-comment">-- to add results other than '()'.</span><span>
+</span><span id="line-84"></span><span id="local-6989586621679080333"><span class="annot"><a href="Data.Delta.Update.html#nop"><span class="hs-identifier hs-type">nop</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080333"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-85"></span><span id="nop"><span class="annot"><span class="annottext">nop :: forall da. Update da ()
+</span><a href="Data.Delta.Update.html#nop"><span class="hs-identifier hs-var hs-var">nop</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Base da -&gt; (Maybe da, ())) -&gt; Update da ()
+forall da r. (Base da -&gt; (Maybe da, r)) -&gt; Update da r
+</span><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-var">Update</span></a></span><span> </span><span class="annot"><span class="annottext">((Base da -&gt; (Maybe da, ())) -&gt; Update da ())
+-&gt; (Base da -&gt; (Maybe da, ())) -&gt; Update da ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Maybe da, ()) -&gt; Base da -&gt; (Maybe da, ())
+forall a b. a -&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe da
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-86"></span><span>
+</span><span id="line-87"></span><span class="annot"><span class="hs-comment">-- | Compute a delta.</span></span><span>
+</span><span id="line-88"></span><span id="local-6989586621679080337"><span id="local-6989586621679080338"><span class="annot"><a href="Data.Delta.Update.html#update"><span class="hs-identifier hs-type">update</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080337"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Base</span></span><span> </span><span class="annot"><a href="#local-6989586621679080338"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080337"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080338"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080338"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-89"></span><span id="update"><span class="annot"><span class="annottext">update :: forall a da. (a ~ Base da) =&gt; (a -&gt; da) -&gt; Update da ()
+</span><a href="Data.Delta.Update.html#update"><span class="hs-identifier hs-var hs-var">update</span></a></span></span><span> </span><span id="local-6989586621679080432"><span class="annot"><span class="annottext">a -&gt; da
+</span><a href="#local-6989586621679080432"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Base da -&gt; (Maybe da, ())) -&gt; Update da ()
+forall da r. (Base da -&gt; (Maybe da, r)) -&gt; Update da r
+</span><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-var">Update</span></a></span><span> </span><span class="annot"><span class="annottext">((Base da -&gt; (Maybe da, ())) -&gt; Update da ())
+-&gt; (Base da -&gt; (Maybe da, ())) -&gt; Update da ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679080433"><span class="annot"><span class="annottext">Base da
+</span><a href="#local-6989586621679080433"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">da -&gt; Maybe da
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; da
+</span><a href="#local-6989586621679080432"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+Base da
+</span><a href="#local-6989586621679080433"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="annot"><span class="hs-comment">-- | Compute a delta with result.</span></span><span>
+</span><span id="line-92"></span><span id="local-6989586621679080341"><span id="local-6989586621679080342"><span id="local-6989586621679080343"><span class="annot"><a href="Data.Delta.Update.html#updateWithResult"><span class="hs-identifier hs-type">updateWithResult</span></a></span><span>
+</span><span id="line-93"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080341"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Base</span></span><span> </span><span class="annot"><a href="#local-6989586621679080342"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-94"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080341"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080342"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679080343"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-comment">-- Delta with result.</span><span>
+</span><span id="line-95"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080342"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080343"><span class="hs-identifier hs-type">r</span></a></span></span></span></span><span>
+</span><span id="line-96"></span><span id="updateWithResult"><span class="annot"><span class="annottext">updateWithResult :: forall a da r. (a ~ Base da) =&gt; (a -&gt; (da, r)) -&gt; Update da r
+</span><a href="Data.Delta.Update.html#updateWithResult"><span class="hs-identifier hs-var hs-var">updateWithResult</span></a></span></span><span> </span><span id="local-6989586621679080437"><span class="annot"><span class="annottext">a -&gt; (da, r)
+</span><a href="#local-6989586621679080437"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Base da -&gt; (Maybe da, r)) -&gt; Update da r
+forall da r. (Base da -&gt; (Maybe da, r)) -&gt; Update da r
+</span><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-var">Update</span></a></span><span> </span><span class="annot"><span class="annottext">((Base da -&gt; (Maybe da, r)) -&gt; Update da r)
+-&gt; (Base da -&gt; (Maybe da, r)) -&gt; Update da r
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679080438"><span class="annot"><span class="annottext">Base da
+</span><a href="#local-6989586621679080438"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-97"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a -&gt; (da, r)
+</span><a href="#local-6989586621679080437"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+Base da
+</span><a href="#local-6989586621679080438"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-98"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621679080439"><span class="annot"><span class="annottext">da
+</span><a href="#local-6989586621679080439"><span class="hs-identifier hs-var">da</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679080440"><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679080440"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">da -&gt; Maybe da
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">da
+</span><a href="#local-6989586621679080439"><span class="hs-identifier hs-var">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679080440"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span class="annot"><span class="hs-comment">-- | Computer a delta or fail.</span></span><span>
+</span><span id="line-101"></span><span id="local-6989586621679080347"><span id="local-6989586621679080348"><span id="local-6989586621679080349"><span class="annot"><a href="Data.Delta.Update.html#updateWithError"><span class="hs-identifier hs-type">updateWithError</span></a></span><span>
+</span><span id="line-102"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080347"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Base</span></span><span> </span><span class="annot"><a href="#local-6989586621679080348"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-103"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080347"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="#local-6989586621679080349"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080348"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-104"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080348"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="#local-6989586621679080349"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-105"></span><span id="updateWithError"><span class="annot"><span class="annottext">updateWithError :: forall a da e.
+(a ~ Base da) =&gt;
+(a -&gt; Either e da) -&gt; Update da (Either e ())
+</span><a href="Data.Delta.Update.html#updateWithError"><span class="hs-identifier hs-var hs-var">updateWithError</span></a></span></span><span> </span><span id="local-6989586621679080444"><span class="annot"><span class="annottext">a -&gt; Either e da
+</span><a href="#local-6989586621679080444"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Base da -&gt; (Maybe da, Either e ())) -&gt; Update da (Either e ())
+forall da r. (Base da -&gt; (Maybe da, r)) -&gt; Update da r
+</span><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-var">Update</span></a></span><span> </span><span class="annot"><span class="annottext">((Base da -&gt; (Maybe da, Either e ())) -&gt; Update da (Either e ()))
+-&gt; (Base da -&gt; (Maybe da, Either e ())) -&gt; Update da (Either e ())
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679080445"><span class="annot"><span class="annottext">Base da
+</span><a href="#local-6989586621679080445"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-106"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a -&gt; Either e da
+</span><a href="#local-6989586621679080444"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+Base da
+</span><a href="#local-6989586621679080445"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-107"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679080446"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679080446"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe da
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">e -&gt; Either e ()
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679080446"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-108"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679080447"><span class="annot"><span class="annottext">da
+</span><a href="#local-6989586621679080447"><span class="hs-identifier hs-var">da</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">da -&gt; Maybe da
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">da
+</span><a href="#local-6989586621679080447"><span class="hs-identifier hs-var">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">() -&gt; Either e ()
+forall a b. b -&gt; Either a b
+</span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span class="annot"><span class="hs-comment">-- | Compute a delta with result or fail.</span></span><span>
+</span><span id="line-111"></span><span id="local-6989586621679080355"><span id="local-6989586621679080356"><span id="local-6989586621679080357"><span id="local-6989586621679080358"><span class="annot"><a href="Data.Delta.Update.html#updateWithResultAndError"><span class="hs-identifier hs-type">updateWithResultAndError</span></a></span><span>
+</span><span id="line-112"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080355"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Base</span></span><span> </span><span class="annot"><a href="#local-6989586621679080356"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-113"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080355"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="#local-6989586621679080357"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080356"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679080358"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-114"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080356"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="#local-6989586621679080357"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080358"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-115"></span><span id="updateWithResultAndError"><span class="annot"><span class="annottext">updateWithResultAndError :: forall a da e r.
+(a ~ Base da) =&gt;
+(a -&gt; Either e (da, r)) -&gt; Update da (Either e r)
+</span><a href="Data.Delta.Update.html#updateWithResultAndError"><span class="hs-identifier hs-var hs-var">updateWithResultAndError</span></a></span></span><span> </span><span id="local-6989586621679080451"><span class="annot"><span class="annottext">a -&gt; Either e (da, r)
+</span><a href="#local-6989586621679080451"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Base da -&gt; (Maybe da, Either e r)) -&gt; Update da (Either e r)
+forall da r. (Base da -&gt; (Maybe da, r)) -&gt; Update da r
+</span><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-var">Update</span></a></span><span> </span><span class="annot"><span class="annottext">((Base da -&gt; (Maybe da, Either e r)) -&gt; Update da (Either e r))
+-&gt; (Base da -&gt; (Maybe da, Either e r)) -&gt; Update da (Either e r)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679080452"><span class="annot"><span class="annottext">Base da
+</span><a href="#local-6989586621679080452"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-116"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a -&gt; Either e (da, r)
+</span><a href="#local-6989586621679080451"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+Base da
+</span><a href="#local-6989586621679080452"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-117"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679080453"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679080453"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe da
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">e -&gt; Either e r
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679080453"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-118"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679080454"><span class="annot"><span class="annottext">da
+</span><a href="#local-6989586621679080454"><span class="hs-identifier hs-var">da</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679080455"><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679080455"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">da -&gt; Maybe da
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">da
+</span><a href="#local-6989586621679080454"><span class="hs-identifier hs-var">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">r -&gt; Either e r
+forall a b. b -&gt; Either a b
+</span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679080455"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-119"></span><span>
+</span><span id="line-120"></span><span class="annot"><span class="hs-comment">-- | Lift an update for a single delta to a list of deltas.</span></span><span>
+</span><span id="line-121"></span><span id="local-6989586621679080363"><span id="local-6989586621679080364"><span class="annot"><a href="Data.Delta.Update.html#updateMany"><span class="hs-identifier hs-type">updateMany</span></a></span><span>
+</span><span id="line-122"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080363"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080364"><span class="hs-identifier hs-type">r</span></a></span><span>
+</span><span id="line-123"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679080363"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621679080364"><span class="hs-identifier hs-type">r</span></a></span></span></span><span>
+</span><span id="line-124"></span><span id="updateMany"><span class="annot"><span class="annottext">updateMany :: forall da r. Update da r -&gt; Update [da] r
+</span><a href="Data.Delta.Update.html#updateMany"><span class="hs-identifier hs-var hs-var">updateMany</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span id="local-6989586621679080456"><span class="annot"><span class="annottext">Base da -&gt; (Maybe da, r)
+</span><a href="#local-6989586621679080456"><span class="hs-identifier hs-var">g</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Base [da] -&gt; (Maybe [da], r)) -&gt; Update [da] r
+forall da r. (Base da -&gt; (Maybe da, r)) -&gt; Update da r
+</span><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-var">Update</span></a></span><span> </span><span class="annot"><span class="annottext">((Base [da] -&gt; (Maybe [da], r)) -&gt; Update [da] r)
+-&gt; (Base [da] -&gt; (Maybe [da], r)) -&gt; Update [da] r
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679080457"><span class="annot"><span class="annottext">Base [da]
+</span><a href="#local-6989586621679080457"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-125"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Base da -&gt; (Maybe da, r)
+</span><a href="#local-6989586621679080456"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">Base da
+Base [da]
+</span><a href="#local-6989586621679080457"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-126"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe da
+</span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679080458"><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679080458"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe [da]
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679080458"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-127"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679080459"><span class="annot"><span class="annottext">da
+</span><a href="#local-6989586621679080459"><span class="hs-identifier hs-var">da</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679080460"><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679080460"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[da] -&gt; Maybe [da]
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">da
+</span><a href="#local-6989586621679080459"><span class="hs-identifier hs-var">da</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679080460"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-128"></span><span>
+</span><span id="line-129"></span><span class="annot"><span class="hs-comment">{- | Helper function for lifting the 'Update' from a
+record field to the record.
+
+Example:
+
+@
+data Pair a b = Pair a b
+first :: Pair a b -&gt; a
+
+data DeltaPair da db
+    = UpdateFirst da
+    | UpdateSecond db
+
+updateField first UpdateFirst
+    :: (a -&gt; Update da r)
+    -&gt; (Pair a b -&gt; Update (DeltaPair da db) r)
+@
+-}</span></span><span>
+</span><span id="line-147"></span><span id="local-6989586621679080367"><span id="local-6989586621679080368"><span id="local-6989586621679080369"><span id="local-6989586621679080370"><span id="local-6989586621679080371"><span class="annot"><a href="Data.Delta.Update.html#updateField"><span class="hs-identifier hs-type">updateField</span></a></span><span>
+</span><span id="line-148"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080367"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Base</span></span><span> </span><span class="annot"><a href="#local-6989586621679080368"><span class="hs-identifier hs-type">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679080369"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Base</span></span><span> </span><span class="annot"><a href="#local-6989586621679080370"><span class="hs-identifier hs-type">db</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-149"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080369"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080367"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-150"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ View field.</span></span><span>
+</span><span id="line-151"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679080368"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679080370"><span class="hs-identifier hs-type">db</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-152"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Lift delta to</span></span><span>
+</span><span id="line-153"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080368"><span class="hs-identifier hs-type">da</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080371"><span class="hs-identifier hs-type">r</span></a></span><span>
+</span><span id="line-154"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080370"><span class="hs-identifier hs-type">db</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679080371"><span class="hs-identifier hs-type">r</span></a></span></span></span></span></span></span><span>
+</span><span id="line-155"></span><span id="updateField"><span class="annot"><span class="annottext">updateField :: forall a da b db r.
+(a ~ Base da, b ~ Base db) =&gt;
+(b -&gt; a) -&gt; (da -&gt; db) -&gt; Update da r -&gt; Update db r
+</span><a href="Data.Delta.Update.html#updateField"><span class="hs-identifier hs-var hs-var">updateField</span></a></span></span><span> </span><span id="local-6989586621679080469"><span class="annot"><span class="annottext">b -&gt; a
+</span><a href="#local-6989586621679080469"><span class="hs-identifier hs-var">view</span></a></span></span><span> </span><span id="local-6989586621679080470"><span class="annot"><span class="annottext">da -&gt; db
+</span><a href="#local-6989586621679080470"><span class="hs-identifier hs-var">embed</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span id="local-6989586621679080471"><span class="annot"><span class="annottext">Base da -&gt; (Maybe da, r)
+</span><a href="#local-6989586621679080471"><span class="hs-identifier hs-var">g</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-156"></span><span>    </span><span class="annot"><span class="annottext">(Base db -&gt; (Maybe db, r)) -&gt; Update db r
+forall da r. (Base da -&gt; (Maybe da, r)) -&gt; Update da r
+</span><a href="Data.Delta.Update.html#Update"><span class="hs-identifier hs-var">Update</span></a></span><span> </span><span class="annot"><span class="annottext">((Base db -&gt; (Maybe db, r)) -&gt; Update db r)
+-&gt; (Base db -&gt; (Maybe db, r)) -&gt; Update db r
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Maybe da, r) -&gt; (Maybe db, r)
+</span><a href="#local-6989586621679080472"><span class="hs-identifier hs-var">lift</span></a></span><span> </span><span class="annot"><span class="annottext">((Maybe da, r) -&gt; (Maybe db, r))
+-&gt; (b -&gt; (Maybe da, r)) -&gt; b -&gt; (Maybe db, r)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; (Maybe da, r)
+Base da -&gt; (Maybe da, r)
+</span><a href="#local-6989586621679080471"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; (Maybe da, r)) -&gt; (b -&gt; a) -&gt; b -&gt; (Maybe da, r)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">b -&gt; a
+</span><a href="#local-6989586621679080469"><span class="hs-identifier hs-var">view</span></a></span><span>
+</span><span id="line-157"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-158"></span><span>    </span><span id="local-6989586621679080472"><span class="annot"><span class="annottext">lift :: (Maybe da, r) -&gt; (Maybe db, r)
+</span><a href="#local-6989586621679080472"><span class="hs-identifier hs-var hs-var">lift</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679080473"><span class="annot"><span class="annottext">Maybe da
+</span><a href="#local-6989586621679080473"><span class="hs-identifier hs-var">mda</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679080474"><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679080474"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">da -&gt; db
+</span><a href="#local-6989586621679080470"><span class="hs-identifier hs-var">embed</span></a></span><span> </span><span class="annot"><span class="annottext">(da -&gt; db) -&gt; Maybe da -&gt; Maybe db
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Maybe da
+</span><a href="#local-6989586621679080473"><span class="hs-identifier hs-var">mda</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679080474"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-159"></span></pre></body></html>
