@@ -19,6 +19,9 @@ import Data.Store
     , newCachedStore
     , newStore
     )
+import Test.Data.Store
+    ( prop_StoreUpdate
+    )
 import Test.Hspec
     ( Spec
     , describe
@@ -36,9 +39,6 @@ import Test.QuickCheck.Gen
 import Test.QuickCheck.Monadic
     ( monadicIO
     , run
-    )
-import Test.Store
-    ( prop_StoreUpdate
     )
 
 spec :: Spec

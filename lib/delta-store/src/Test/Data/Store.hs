@@ -17,7 +17,7 @@ This module provides utilities for testing 'Store' implementations.
 * 'StoreUnitTest' provides a monadic DSL
   for writing example test cases for 'Store'.
 -}
-module Test.Store
+module Test.Data.Store
     ( -- * Store laws
       GenDelta
     , prop_StoreUpdate
