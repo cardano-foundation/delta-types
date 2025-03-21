@@ -7,7 +7,8 @@ An instance 'Delta'@ delta@ indicates that the type @delta@
 is a delta type of the corresponding base type 'Base'@ delta@.
 The 'apply' function applies a delta to the base type.
 
-Delta types can be transformed into each other using an 'Embedding'.
+Delta types can be transformed into each other using the 'Embedding' type.
+'Embedding's can be composed using the 'Semigroupoid' class.
 
 Examples:
 
@@ -18,7 +19,11 @@ prop> ∀(x :: Set Char). apply [Delete 'b', Insert 'b'] x = apply (Delete 'b') 
 -}
 module Data.Delta (
     -- * Modules
-    -- | Core definitions:
+
+    -- | The present module re-exports the following child modules
+    -- for convenience.
+    --
+    -- Core definitions:
     -- 'Delta' class, 'apply' function, 'Base' type family.
     --
     -- Core instances:
