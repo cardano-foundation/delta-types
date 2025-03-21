@@ -1,7 +1,15 @@
 cabal-version:   2.2
 name:            delta-store
 version:         1.0.0.0
-synopsis:        Facility for storing a Haskell value, using delta types.
+synopsis:        Facilities for storing a Haskell value, using delta types.
+description:
+  This package provides facilities for storing Haskell values
+  in persistent storage as opposed to in volatile memory.
+  .
+  * "Data.Store" — store values outside of volatile memory (RAM).
+  .
+  * "Data.DBVar" — mutable variable that mirrors its value in a 'Store'.
+
 homepage:        https://github.com/cardano-foundation/delta-types
 license:         Apache-2.0
 license-file:    LICENSE
@@ -52,7 +60,7 @@ library
     Data.DBVar
     Data.Delta.Update
     Data.Store
-    Test.Store
+    Test.Data.Store
 
 test-suite unit
   import:             language, opts-exe

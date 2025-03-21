@@ -1,16 +1,22 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
--- |
--- Copyright: © 2023 IOHK
--- License: Apache-2.0
-module Data.Delta.Update (
-    -- * Synopsis
-    -- | 'Update' represents a computation which produces a delta and
-    -- a result.
-    --
-    -- Note: This module is preliminary.
 
+{-|
+Copyright   : © 2022-2023 IOHK, 2023-2025 Cardano Foundation
+License     : Apache-2.0
+Description : Computations that produce a delta and a result.
+
+'Update' represents a computation which produces a delta and a result.
+
+Similar to the 'Control.Monad.Trans.State.State' monad,
+but involves a 'Delta' type.
+
+Useful for composing updates to a 'DBVar', via 'onDBVar'.
+
+Note: This module is preliminary.
+-}
+module Data.Delta.Update (
     -- * Update
     -- ** Type
       Update
@@ -46,8 +52,9 @@ import Data.Delta
 -- | A computation which inspects a value @a ~ Base da@
 -- and produces a delta @da@ and a result of type @r@.
 --
--- Similar to the 'Control.Monad.Trans.State.State' computation,
--- but involving 'Delta' types.
+-- Related to the 'Control.Monad.Trans.State.State' monad:
+-- The type @'Update' ('Data.Delta.Core.Replace' s) r@ is essentially equivalent to
+-- @'Control.Monad.Trans.State.State' s r@.
 newtype Update da r = Update { runUpdate_ :: Base da -> (Maybe da, r) }
 
 -- | Run the 'Update' computation.
@@ -97,7 +104,7 @@ updateWithResult f = Update $ \a ->
     case f a of
         (da, r) -> (Just da, r)
 
--- | Computer a delta or fail.
+-- | Compute a delta or fail.
 updateWithError
     :: (a ~ Base da)
     => (a -> Either e da)

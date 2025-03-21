@@ -7,19 +7,35 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
--- |
--- Copyright: © 2023 IOHK
--- License: Apache-2.0
-module Data.Store (
-    -- * Synopsis
-    -- | 'Store' represents a facility for storing one value of a given type.
-    --
-    -- Typically, this facility is useful when we want to store
-    -- a value __outside of RAM__, e.g. in a database file on the hard disk,
-    -- because otherwise, we can just work with the Haskell value itself.
-    -- In such cases, the value is typically a collection,
-    -- for example 'Data.Map.Map'@ @'Integer'@ @'String'.
 
+{-|
+Copyright   : © 2022-2023 IOHK, 2023-2025 Cardano Foundation
+License     : Apache-2.0
+Description : Store a value of a given type outside of volatile memory.
+
+'Store' represents a facility for storing one value of a given type.
+Typically, this type is a collection type,
+for example 'Data.Map.Map'@ @'Integer'@ @'String',
+so that we actually stores multiple values.
+
+The key benefit of a 'Store' is that it can store the value
+__outside of volatile memory (RAM)__ —
+for example, the value can be stored in a database file on disk,
+that is on persistent storage.
+
+* Read-access is done on parts of the value, through a query GADT
+  that is an instance of the 'Query' class.
+  In this way, we do not need to load the stored value
+  fully into volatile memory.
+* Updates are incremental and use delta types, see "Data.Delta".
+  In this way, we can modify the persistent storage incrementally.
+
+Conversely, there is no need to use 'Store' if
+the value only ever lives in volatile memory
+— in this case, it is much simpler to use a plain Haskell value,
+introduced with @let@, @where@, or as a function argument.
+-}
+module Data.Store (
     -- * Store, definition
     -- ** Type
       Store (..)
@@ -139,7 +155,7 @@ The purpose of the type parameters is:
 * The monad @m@ encapsulates access to the storage space.
 * The query type @qa@ represents the specialized queries
   that this store supports.
-* The delta type @da@ is used for efficient updates.
+* The delta type @da@ is used for incremental updates.
 
 If you care about one these aspects, but not the others,
 we recommend to use a specialized type synonym
@@ -154,7 +170,7 @@ data Store m (qa :: Type -> Type) da = Store
       -- | Write a value from memory into the store.
     , writeS  :: Base da -> m ()
       -- | Update the value in the store
-      -- efficiently by using a 'Delta' type @da@.
+      -- incrementally by using a 'Delta' type @da@.
       --
       -- For effiency,
       -- the first argument may supply the current value in-memory.
@@ -455,10 +471,13 @@ mkQueryStore queryS Store{loadS,writeS,updateS} =
 {-------------------------------------------------------------------------------
     Query
 -------------------------------------------------------------------------------}
--- | A /query/ @qa b@ for the type @a ~ World qa@
+-- | A __query__ @qa b@ for the type @a ~ World qa@
 -- corresponds to a function @a -> b@.
 -- Put differently, a query allows us to extract some information of type @b@
 -- from the larger type @a@.
+--
+-- Typically, instances of 'Query' are
+-- generalized algebraic data types (GADT).
 class Query qa where
     type family World qa
     query :: qa b -> World qa -> b
@@ -478,6 +497,7 @@ instance Query (Whole a) where
 --
 -- Access to the underlying 'Store' is enforced to be sequential,
 -- but the cache can be accessed in parallel.
+--
 -- FIXME: There is still a small race condition where the cache
 -- could be written twice before it is filled. 🤔
 -- TODO: Think about whether it is really necessary to handle concurrency here.

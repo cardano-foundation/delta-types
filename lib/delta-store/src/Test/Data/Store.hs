@@ -1,12 +1,23 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ViewPatterns #-}
 
--- |
--- Copyright: © 2023 IOHK
--- License: Apache-2.0
-module Test.Store
+{-|
+Copyright   : © 2022-2023 IOHK, 2023-2025 Cardano Foundation
+License     : Apache-2.0
+Description : Utilities for testing 'Store' implementations.
+
+This module provides utilities for testing 'Store' implementations.
+
+* 'prop_StoreUpdate' is a general property test that tests
+  the laws for 'updateS'.
+* 'genChain' generates random sequences of deltas.
+* 'StoreUnitTest' provides a monadic DSL
+  for writing example test cases for 'Store'.
+-}
+module Test.Data.Store
     ( -- * Store laws
       GenDelta
     , prop_StoreUpdate
@@ -17,6 +28,7 @@ module Test.Store
     , shrinkChain
 
     -- * Unit test DSL for developing a Store
+    , StoreUnitTest
     , unitTestStore
     , applyS
     , checkLaw
@@ -147,17 +159,19 @@ prop_StoreUpdate toIO mkStore gen0 more =
 {-----------------------------------------------------------------------------
     DSL for developing
 ------------------------------------------------------------------------------}
--- | A DSL to unit test a 'Store'.
-type StoreUnitTest m qa da =
-    RWST
+-- | A monadic DSL to unit test a 'Store'.
+newtype StoreUnitTest m qa da r = StoreUnitTest
+    { runStoreUnitTest :: RWST
         (Store m qa da)
         [Property]
         (Base da, Base da, [da])
         m
+        r
+    } deriving (Functor, Applicative, Monad)
 
 -- | Apply a delta to the current value.
 applyS :: (Monad m, Delta da) => da -> StoreUnitTest m qa da ()
-applyS r = do
+applyS r = StoreUnitTest $ do
     s <- ask
     (q, x, ds) <- get
     put (q, apply r x, r : ds)
@@ -167,7 +181,7 @@ applyS r = do
 checkLaw
     :: (Monad m, Eq (Base da), Show (Base da), Show da)
     => StoreUnitTest m qa da ()
-checkLaw = do
+checkLaw = StoreUnitTest $ do
     (_, x, reverse -> ds) <- get
     x' <- ask >>= lift . loadS
     tell
@@ -182,7 +196,7 @@ checkLaw = do
 
 -- | Reset the store state to the initial value.
 reset :: Monad m => StoreUnitTest m qa da ()
-reset = do
+reset = StoreUnitTest $ do
     s <- ask
     (q, _, _) <- get
     lift $ writeS s q
@@ -195,7 +209,9 @@ unitTestStore
     -> Store m qa da
     -> StoreUnitTest m qa da a
     -> m Property
-unitTestStore x s f = conjoin . snd <$> evalRWST (f >> checkLaw) s (x, x, [])
+unitTestStore x s f =
+    conjoin . snd
+        <$> evalRWST (runStoreUnitTest (f >> checkLaw)) s (x, x, [])
 
 -- | Add a context to test.
 context
@@ -203,17 +219,17 @@ context
     => (Property -> Property)
     -> StoreUnitTest m qa da x
     -> StoreUnitTest m qa da x
-context d f = do
-    (x, w) <- listen f
+context d f = StoreUnitTest $ do
+    (x, w) <- listen $ runStoreUnitTest f
     tell $ fmap d w
     pure x
 
 -- | Observe a property on the current value of the store.
 observe :: Monad m => (Base da -> Property) -> StoreUnitTest m qa da ()
-observe f = do
+observe f = StoreUnitTest $ do
     (_, s, _) <- get
     tell [f s]
 
 -- | Ignore the properties of a sub-test.
 ignore :: Monad m => StoreUnitTest m qa da x -> StoreUnitTest m qa da x
-ignore = censor (const [])
+ignore = StoreUnitTest . censor (const []) . runStoreUnitTest
