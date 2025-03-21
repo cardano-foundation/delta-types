@@ -5,21 +5,22 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
--- |
--- Copyright: © 2023 IOHK
--- License: Apache-2.0
-module Data.DBVar (
-    -- * Synopsis
-    -- | 'DBVar' represents a mutable variable whose value is kept in memory,
-    -- but which is written to the hard drive on every update.
-    -- This provides a convenient interface for persisting
-    -- values across program runs.
-    -- For efficient updates, delta encodings are used, see "Data.Delta".
-    --
-    -- 'Store' represent a storage facility to which the 'DBVar'
-    -- is written.
 
-    -- * DBVar
+{-|
+Copyright   : © 2022-2023 IOHK, 2023-2025 Cardano Foundation
+License     : Apache-2.0
+Description : Mutable variable that mirrors its value in a 'Data.Store.Store'.
+
+'DBVar' represents a mutable variable that stores one Haskell value
+in volatile memory (RAM),
+but mirrors the value to persistent storage,
+for example to a database on disk.
+
+* 'Store' represents the storage facility to which the variable is mirrored.
+* Read-access is from volatile memory and highly concurrent.
+* Updates are incremental and use delta types, see "Data.Delta".
+-}
+module Data.DBVar (
       DBVar
     , readDBVar, updateDBVar, modifyDBVar, modifyDBMaybe
     , initDBVar, loadDBVar
@@ -57,14 +58,14 @@ import Data.Store
     DBVar
 -------------------------------------------------------------------------------}
 -- | A 'DBVar'@ m delta@ is a mutable reference to a Haskell value of type @a@.
--- The type @delta@ is a delta encoding for this value type @a@,
+-- The type @delta@ is a delta type for this value type @a@,
 -- that is we have @a ~ @'Base'@ delta@.
 --
 -- The Haskell value is cached in memory, in weak head normal form (WHNF).
--- However, whenever the value is updated, a copy of will be written
--- to persistent storage like a file or database on the hard disk;
--- any particular storage is specified by the 'Store' type.
--- For efficient updates, the delta encoding @delta@ is used in the update.
+-- However, whenever the value is updated, a copy of the value will be written
+-- to persistent storage like a file or database on disk;
+-- the specific storage facility is represented by a 'Store'.
+-- For efficient updates, the delta type @delta@ is used in the update.
 --
 -- Concurrency: 'DBVar' fully supports concurrent reads and updates.
 --
@@ -81,7 +82,7 @@ data DBVar m delta = DBVar
 readDBVar :: (Delta da, a ~ Base da) => DBVar m da -> m a
 readDBVar = readDBVar_
 
--- | Update the value of the 'DBVar' using a delta encoding.
+-- | Update the value of the 'DBVar' using a delta type.
 --
 -- The new value will be evaluated to weak head normal form.
 updateDBVar :: (Delta da, Monad m) => DBVar m da -> da -> m ()
@@ -89,7 +90,7 @@ updateDBVar var delta = modifyDBMaybe var $ \_ -> (Just delta,())
 
 -- | Modify the value in a 'DBVar'.
 --
--- The new value will be evaluated to weak head normal form.
+-- The new value will be evaluated to weak head normal form (WHNF).
 modifyDBVar
     :: (Delta da, Monad m, a ~ Base da)
     => DBVar m da -> (a -> (da, b)) -> m b
@@ -97,31 +98,33 @@ modifyDBVar var f = modifyDBMaybe var $ \a -> let (da,b) = f a in (Just da,b)
 
 -- | Maybe modify the value in a 'DBVar'
 --
--- If updated, the new value will be evaluated to weak head normal form.
+-- If updated,
+-- the new value will be evaluated to weak head normal form (WHNF).
 modifyDBMaybe
     :: (Delta da, Monad m, a ~ Base da)
     => DBVar m da -> forall b. (a -> (Maybe da, b)) -> m b
 modifyDBMaybe = modifyDBMaybe_
 
--- | Initialize a new 'DBVar' for a given 'Store'.
+-- | Initialize a new 'DBVar' that mirrors to a given 'Store'.
 initDBVar
     ::  ( MonadSTM m, MonadThrow m, MonadEvaluate m, MonadMask m
         , Delta da, a ~ Base da
         )
-    => UpdateStore m da -- ^ 'Store' for writing.
+    => UpdateStore m da -- ^ 'Store' for mirroring.
     -> a -- ^ Initial value.
     -> m (DBVar m da)
 initDBVar store v = do
     writeS store v
     newWithCache (updateS store . Just) v
 
--- | Create a 'DBVar' by loading its value from an existing 'Store'.
+-- | Create a 'DBVar' that mirrors to a given 'Store',
+-- and also loads its initial value from there.
 -- Throws an exception if the value cannot be loaded.
 loadDBVar
     ::  ( MonadSTM m, MonadThrow m, MonadEvaluate m, MonadMask m
         , Delta da
         )
-    => UpdateStore m da -- ^ 'Store' for writing and for reading the initial value.
+    => UpdateStore m da -- ^ 'Store' for mirroring and for reading the initial value.
     -> m (DBVar m da)
 loadDBVar store =
     loadS store >>= \case

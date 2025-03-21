@@ -1,11 +1,22 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ViewPatterns #-}
 
--- |
--- Copyright: © 2023 IOHK
--- License: Apache-2.0
+{-|
+Copyright   : © 2022-2023 IOHK, 2023-2025 Cardano Foundation
+License     : Apache-2.0
+Description : Utilities for testing 'Store' implementations.
+
+This module provides utilities for testing 'Store' implementations.
+
+* 'prop_StoreUpdate' is a general property test that tests
+  the laws for 'updateS'.
+* 'genChain' generates random sequences of deltas.
+* 'StoreUnitTest' provides a monadic DSL
+  for writing example test cases for 'Store'.
+-}
 module Test.Store
     ( -- * Store laws
       GenDelta
@@ -17,6 +28,7 @@ module Test.Store
     , shrinkChain
 
     -- * Unit test DSL for developing a Store
+    , StoreUnitTest
     , unitTestStore
     , applyS
     , checkLaw
