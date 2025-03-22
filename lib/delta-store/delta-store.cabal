@@ -72,6 +72,7 @@ test-suite unit
     , delta-store
     , delta-types
     , hspec        >=2.11.0  && <2.12
+    , io-classes
     , io-sim       >=1.4.0.0 && <1.8
     , QuickCheck
 

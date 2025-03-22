@@ -85,7 +85,9 @@ module Data.Store (
 
     -- ** Testing
     , embedStore'
-    , newStore, NotInitialized (..), updateSequence
+    , newStore
+    , NotInitialized (..)
+    , updateSequence
     ) where
 
 import Prelude
