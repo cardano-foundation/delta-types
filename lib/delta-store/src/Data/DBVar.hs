@@ -22,8 +22,12 @@ for example to a database on disk.
 -}
 module Data.DBVar (
       DBVar
-    , readDBVar, updateDBVar, modifyDBVar, modifyDBMaybe
-    , initDBVar, loadDBVar
+    , readDBVar
+    , updateDBVar
+    , modifyDBVar
+    , modifyDBMaybe
+    , initDBVar
+    , loadDBVar
     ) where
 
 import Prelude

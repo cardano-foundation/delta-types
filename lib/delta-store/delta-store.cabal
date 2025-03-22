@@ -71,8 +71,11 @@ test-suite unit
     , base
     , delta-store
     , delta-types
-    , hspec        >=2.11.0 && <2.12
+    , hspec        >=2.11.0  && <2.12
+    , io-sim       >=1.4.0.0 && <1.8
     , QuickCheck
 
   build-tool-depends: hspec-discover:hspec-discover
-  other-modules:      Data.StoreSpec
+  other-modules:
+    Data.DBVarSpec
+    Data.StoreSpec
