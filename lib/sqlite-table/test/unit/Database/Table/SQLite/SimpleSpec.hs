@@ -35,8 +35,10 @@ import qualified Database.Table.SQLite.Simple as Sql
 spec :: Spec
 spec = do
     describe "SqlM examples" $ do
+        it "doc example" $
+            testExample
         it "various operations" $
-            testSqlM
+            testExample2
         it "exceptions" $
             testExceptions
 
@@ -60,9 +62,26 @@ colName = Col
 colBirthYear :: Col "birthyear" Int
 colBirthYear = Col
 
--- | Sequence of databse operations.
-exampleSqlM :: Sql.SqlM [Row TablePerson]
-exampleSqlM = do
+exampleRow :: Row TablePerson
+exampleRow = ("Ada Lovelace", 1815)
+
+-- | Example from the documentation.
+example :: Sql.SqlM Int
+example = do
+    Sql.createTable tablePerson
+    Sql.insertOne ("Babbage", 1791) tablePerson
+    Sql.insertOne exampleRow tablePerson
+    length <$> Sql.selectWhere (colBirthYear Sql.>. 1800) tablePerson
+
+testExample :: IO ()
+testExample = do
+    rowCount <- Sql.withConnection ":memory:"
+        $ Sql.runSqlM example
+    assert "" $ rowCount == 1
+
+-- | Sequence of database operations.
+example2 :: Sql.SqlM [Row TablePerson]
+example2 = do
     Sql.createTable tablePerson
     Sql.insertOne ("Neko", 1603) tablePerson
     Sql.deleteWhere (colName Sql.==. "Neko") tablePerson
@@ -80,9 +99,9 @@ exampleSqlM = do
 rowsFinal :: [Row TablePerson]
 rowsFinal = [("Ada",1815)]
 
-testSqlM :: IO ()
-testSqlM = do
-    rows <- Sql.withConnection ":memory:" $ Sql.runSqlM exampleSqlM
+testExample2 :: IO ()
+testExample2 = do
+    rows <- Sql.withConnection ":memory:" $ Sql.runSqlM example2
     assert (show rows)
         $ rows == rowsFinal
 
@@ -90,7 +109,7 @@ testSqlM = do
 testExceptions :: IO ()
 testExceptions = do
     Sql.withConnection ":memory:" $ \conn -> do
-        _ <- Sql.runSqlM exampleSqlM conn
+        _ <- Sql.runSqlM example2 conn
         rowsBefore <- Sql.runSqlM (Sql.selectAll tablePerson) conn
         Sql.runSqlM
             ( do
