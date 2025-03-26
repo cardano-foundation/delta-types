@@ -1,0 +1,469 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DerivingStrategies #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE NamedFieldPuns #-}</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="annot"><span class="hs-comment">{- |
+Copyright: &#169; 2024 Cardano Foundation
+License: Apache-2.0
+
+Monad for atomic SQLite operations.
+-}</span></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html"><span class="hs-identifier">Database.Table.SQLite.Simple.Monad</span></a></span><span>
+</span><span id="line-12"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * SQL connection</span></span><span>
+</span><span id="line-13"></span><span>      </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#Connection"><span class="hs-identifier">Connection</span></a></span><span>
+</span><span id="line-14"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#open"><span class="hs-identifier">open</span></a></span><span>
+</span><span id="line-15"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#close"><span class="hs-identifier">close</span></a></span><span>
+</span><span id="line-16"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#withConnection"><span class="hs-identifier">withConnection</span></a></span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><span class="hs-comment">-- * SQL monad</span></span><span>
+</span><span id="line-19"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#SqlM"><span class="hs-identifier">SqlM</span></a></span><span>
+</span><span id="line-20"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#runSqlM"><span class="hs-identifier">runSqlM</span></a></span><span>
+</span><span id="line-21"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#rawSqlite"><span class="hs-identifier">rawSqlite</span></a></span><span>
+</span><span id="line-22"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#SqlException"><span class="hs-identifier">SqlException</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Prelude</span></span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Concurrent.MVar</span></span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">MVar</span></span><span>
+</span><span id="line-29"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">newMVar</span></span><span>
+</span><span id="line-30"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">withMVar</span></span><span>
+</span><span id="line-31"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Exception</span></span><span>
+</span><span id="line-33"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Exception</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">SomeException</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Class.MonadThrow</span></span><span>
+</span><span id="line-37"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">MonadCatch</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">MonadThrow</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Trans.Reader</span></span><span>
+</span><span id="line-41"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">ReaderT</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Database.SQLite.Simple</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Sqlite</span></span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    SQL Connection
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-49"></span><span class="annot"><span class="hs-comment">-- | A connection to an open SQLite database.</span></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">data</span><span> </span><span id="Connection"><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#Connection"><span class="hs-identifier hs-var">Connection</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Connection"><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#Connection"><span class="hs-identifier hs-var">Connection</span></a></span></span><span>
+</span><span id="line-51"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="filepath"><span class="annot"><span class="annottext">Connection -&gt; FilePath
+</span><a href="Database.Table.SQLite.Simple.Monad.html#filepath"><span class="hs-identifier hs-var hs-var">filepath</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span>
+</span><span id="line-52"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="connection"><span class="annot"><span class="annottext">Connection -&gt; Connection
+</span><a href="Database.Table.SQLite.Simple.Monad.html#connection"><span class="hs-identifier hs-var hs-var">connection</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sqlite.Connection</span></span><span>
+</span><span id="line-53"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="lock"><span class="annot"><span class="annottext">Connection -&gt; MVar ()
+</span><a href="Database.Table.SQLite.Simple.Monad.html#lock"><span class="hs-identifier hs-var hs-var">lock</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MVar</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span class="annot"><span class="hs-comment">{-|
+Open a database connection to a given file.
+Will throw an exception if the connection cannot be opened,
+for example because the file does not exist.
+
+Every 'open' must be closed with a call to 'close'.
+
+If you specify @\&quot;:memory:\&quot;@ or an empty string as the input filename,
+then a private, temporary in-memory database is created for the connection.
+This database will vanish when you close the connection.
+
+(See also 'Sqlite.open' in &quot;Database.SQLite.Simple&quot;.)
+-}</span></span><span>
+</span><span id="line-69"></span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#open"><span class="hs-identifier hs-type">open</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#Connection"><span class="hs-identifier hs-type">Connection</span></a></span><span>
+</span><span id="line-70"></span><span id="open"><span class="annot"><span class="annottext">open :: FilePath -&gt; IO Connection
+</span><a href="Database.Table.SQLite.Simple.Monad.html#open"><span class="hs-identifier hs-var hs-var">open</span></a></span></span><span> </span><span id="local-6989586621679082104"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679082104"><span class="hs-identifier hs-var">filepath</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-71"></span><span>    </span><span id="local-6989586621679082105"><span class="annot"><a href="#local-6989586621679082105"><span class="hs-identifier hs-var">connection</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO Connection
+</span><span class="hs-identifier hs-var">Sqlite.open</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679082104"><span class="hs-identifier hs-var">filepath</span></a></span><span>
+</span><span id="line-72"></span><span>    </span><span id="local-6989586621679082106"><span class="annot"><a href="#local-6989586621679082106"><span class="hs-identifier hs-var">lock</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="hs-identifier hs-type">newMVar</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-73"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#Connection"><span class="hs-identifier hs-type">Connection</span></a></span><span class="hs-special">{</span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#filepath"><span class="hs-identifier hs-var hs-type">filepath</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#connection"><span class="hs-identifier hs-var hs-type">connection</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#lock"><span class="hs-identifier hs-var hs-type">lock</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span class="hs-comment">-- | Close a database connection.</span><span>
+</span><span id="line-76"></span><span class="hs-comment">--</span><span>
+</span><span id="line-77"></span><span class="hs-comment">-- (See also 'Sqlite.close' in &quot;Database.SQLite.Simple&quot;.)</span><span>
+</span><span id="line-78"></span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#close"><span class="hs-identifier hs-type">close</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#Connection"><span class="hs-identifier hs-type">Connection</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-79"></span><span id="close"><span class="annot"><span class="annottext">close :: Connection -&gt; IO ()
+</span><a href="Database.Table.SQLite.Simple.Monad.html#close"><span class="hs-identifier hs-var hs-var">close</span></a></span></span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#Connection"><span class="hs-identifier hs-type">Connection</span></a></span><span class="hs-special">{</span><span id="local-6989586621679082108"><span class="annot"><span class="annottext">Connection
+connection :: Connection -&gt; Connection
+connection :: Connection
+</span><a href="Database.Table.SQLite.Simple.Monad.html#connection"><span class="hs-identifier hs-var hs-var">connection</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Connection -&gt; IO ()
+</span><span class="hs-identifier hs-var">Sqlite.close</span></span><span> </span><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679082108"><span class="hs-identifier hs-var">connection</span></a></span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span class="hs-comment">-- | Opens a database connection, executes an action using this connection,</span><span>
+</span><span id="line-82"></span><span class="hs-comment">-- and closes the connection, even in the presence of exceptions.</span><span>
+</span><span id="line-83"></span><span class="hs-comment">--</span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- (See also 'Sqlite.withConnection' in &quot;Database.SQLite.Simple&quot;.)</span><span>
+</span><span id="line-85"></span><span id="local-6989586621679081916"><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#withConnection"><span class="hs-identifier hs-type">withConnection</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#Connection"><span class="hs-identifier hs-type">Connection</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="#local-6989586621679081916"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="#local-6989586621679081916"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-86"></span><span id="withConnection"><span class="annot"><span class="annottext">withConnection :: forall a. FilePath -&gt; (Connection -&gt; IO a) -&gt; IO a
+</span><a href="Database.Table.SQLite.Simple.Monad.html#withConnection"><span class="hs-identifier hs-var hs-var">withConnection</span></a></span></span><span> </span><span id="local-6989586621679082112"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679082112"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IO Connection
+-&gt; (Connection -&gt; IO ()) -&gt; (Connection -&gt; IO a) -&gt; IO a
+forall a b c. IO a -&gt; (a -&gt; IO b) -&gt; (a -&gt; IO c) -&gt; IO c
+forall (m :: * -&gt; *) a b c.
+MonadThrow m =&gt;
+m a -&gt; (a -&gt; m b) -&gt; (a -&gt; m c) -&gt; m c
+</span><span class="hs-identifier hs-var">bracket</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; IO Connection
+</span><a href="Database.Table.SQLite.Simple.Monad.html#open"><span class="hs-identifier hs-var">open</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679082112"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Connection -&gt; IO ()
+</span><a href="Database.Table.SQLite.Simple.Monad.html#close"><span class="hs-identifier hs-var">close</span></a></span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    SQL monad
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-91"></span><span class="annot"><span class="hs-comment">{- | Monad for database operations.
+
+This monad includes the following effects:
+
+* mutable state &#8212; The state of the database is represented as mutable state.
+* exceptions
+
+When using 'runSqlM', an action from this monad is executed atomically:
+Either the whole action succeeds, then all state changes persists,
+or the action throws an exception, then none of state changes persist.
+-}</span></span><span>
+</span><span id="line-102"></span><span class="hs-keyword">newtype</span><span> </span><span id="SqlM"><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#SqlM"><span class="hs-identifier hs-var">SqlM</span></a></span></span><span> </span><span id="local-6989586621679082067"><span class="annot"><a href="#local-6989586621679082067"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="SqlM"><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#SqlM"><span class="hs-identifier hs-var">SqlM</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sqlite.Connection</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="#local-6989586621679082067"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-103"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">newtype</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679082116"><span id="local-6989586621679082122"><span class="annot"><span class="annottext">(forall a b. (a -&gt; b) -&gt; SqlM a -&gt; SqlM b)
+-&gt; (forall a b. a -&gt; SqlM b -&gt; SqlM a) -&gt; Functor SqlM
+forall a b. a -&gt; SqlM b -&gt; SqlM a
+forall a b. (a -&gt; b) -&gt; SqlM a -&gt; SqlM b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+$cfmap :: forall a b. (a -&gt; b) -&gt; SqlM a -&gt; SqlM b
+fmap :: forall a b. (a -&gt; b) -&gt; SqlM a -&gt; SqlM b
+$c&lt;$ :: forall a b. a -&gt; SqlM b -&gt; SqlM a
+&lt;$ :: forall a b. a -&gt; SqlM b -&gt; SqlM a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679082133"><span id="local-6989586621679082138"><span id="local-6989586621679082142"><span id="local-6989586621679082146"><span id="local-6989586621679082150"><span class="annot"><span class="annottext">Functor SqlM
+Functor SqlM =&gt;
+(forall a. a -&gt; SqlM a)
+-&gt; (forall a b. SqlM (a -&gt; b) -&gt; SqlM a -&gt; SqlM b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; SqlM a -&gt; SqlM b -&gt; SqlM c)
+-&gt; (forall a b. SqlM a -&gt; SqlM b -&gt; SqlM b)
+-&gt; (forall a b. SqlM a -&gt; SqlM b -&gt; SqlM a)
+-&gt; Applicative SqlM
+forall a. a -&gt; SqlM a
+forall a b. SqlM a -&gt; SqlM b -&gt; SqlM a
+forall a b. SqlM a -&gt; SqlM b -&gt; SqlM b
+forall a b. SqlM (a -&gt; b) -&gt; SqlM a -&gt; SqlM b
+forall a b c. (a -&gt; b -&gt; c) -&gt; SqlM a -&gt; SqlM b -&gt; SqlM c
+forall (f :: * -&gt; *).
+Functor f =&gt;
+(forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+$cpure :: forall a. a -&gt; SqlM a
+pure :: forall a. a -&gt; SqlM a
+$c&lt;*&gt; :: forall a b. SqlM (a -&gt; b) -&gt; SqlM a -&gt; SqlM b
+&lt;*&gt; :: forall a b. SqlM (a -&gt; b) -&gt; SqlM a -&gt; SqlM b
+$cliftA2 :: forall a b c. (a -&gt; b -&gt; c) -&gt; SqlM a -&gt; SqlM b -&gt; SqlM c
+liftA2 :: forall a b c. (a -&gt; b -&gt; c) -&gt; SqlM a -&gt; SqlM b -&gt; SqlM c
+$c*&gt; :: forall a b. SqlM a -&gt; SqlM b -&gt; SqlM b
+*&gt; :: forall a b. SqlM a -&gt; SqlM b -&gt; SqlM b
+$c&lt;* :: forall a b. SqlM a -&gt; SqlM b -&gt; SqlM a
+&lt;* :: forall a b. SqlM a -&gt; SqlM b -&gt; SqlM a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679082160"><span id="local-6989586621679082165"><span id="local-6989586621679082169"><span class="annot"><span class="annottext">Applicative SqlM
+Applicative SqlM =&gt;
+(forall a b. SqlM a -&gt; (a -&gt; SqlM b) -&gt; SqlM b)
+-&gt; (forall a b. SqlM a -&gt; SqlM b -&gt; SqlM b)
+-&gt; (forall a. a -&gt; SqlM a)
+-&gt; Monad SqlM
+forall a. a -&gt; SqlM a
+forall a b. SqlM a -&gt; SqlM b -&gt; SqlM b
+forall a b. SqlM a -&gt; (a -&gt; SqlM b) -&gt; SqlM b
+forall (m :: * -&gt; *).
+Applicative m =&gt;
+(forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+$c&gt;&gt;= :: forall a b. SqlM a -&gt; (a -&gt; SqlM b) -&gt; SqlM b
+&gt;&gt;= :: forall a b. SqlM a -&gt; (a -&gt; SqlM b) -&gt; SqlM b
+$c&gt;&gt; :: forall a b. SqlM a -&gt; SqlM b -&gt; SqlM b
+&gt;&gt; :: forall a b. SqlM a -&gt; SqlM b -&gt; SqlM b
+$creturn :: forall a. a -&gt; SqlM a
+return :: forall a. a -&gt; SqlM a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-104"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">newtype</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679082179"><span id="local-6989586621679082187"><span id="local-6989586621679082192"><span id="local-6989586621679082197"><span id="local-6989586621679082204"><span class="annot"><span class="annottext">Monad SqlM
+Monad SqlM =&gt;
+(forall e a. Exception e =&gt; e -&gt; SqlM a)
+-&gt; (forall a b c.
+    SqlM a -&gt; (a -&gt; SqlM b) -&gt; (a -&gt; SqlM c) -&gt; SqlM c)
+-&gt; (forall a b c. SqlM a -&gt; SqlM b -&gt; SqlM c -&gt; SqlM c)
+-&gt; (forall a b. SqlM a -&gt; SqlM b -&gt; SqlM a)
+-&gt; (forall e a. ExceptionAnnotation e =&gt; e -&gt; SqlM a -&gt; SqlM a)
+-&gt; MonadThrow SqlM
+forall e a. ExceptionAnnotation e =&gt; e -&gt; SqlM a -&gt; SqlM a
+forall e a. Exception e =&gt; e -&gt; SqlM a
+forall a b. SqlM a -&gt; SqlM b -&gt; SqlM a
+forall a b c. SqlM a -&gt; SqlM b -&gt; SqlM c -&gt; SqlM c
+forall a b c. SqlM a -&gt; (a -&gt; SqlM b) -&gt; (a -&gt; SqlM c) -&gt; SqlM c
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall e a. Exception e =&gt; e -&gt; m a)
+-&gt; (forall a b c. m a -&gt; (a -&gt; m b) -&gt; (a -&gt; m c) -&gt; m c)
+-&gt; (forall a b c. m a -&gt; m b -&gt; m c -&gt; m c)
+-&gt; (forall a b. m a -&gt; m b -&gt; m a)
+-&gt; (forall e a. ExceptionAnnotation e =&gt; e -&gt; m a -&gt; m a)
+-&gt; MonadThrow m
+$cthrowIO :: forall e a. Exception e =&gt; e -&gt; SqlM a
+throwIO :: forall e a. Exception e =&gt; e -&gt; SqlM a
+$cbracket :: forall a b c. SqlM a -&gt; (a -&gt; SqlM b) -&gt; (a -&gt; SqlM c) -&gt; SqlM c
+bracket :: forall a b c. SqlM a -&gt; (a -&gt; SqlM b) -&gt; (a -&gt; SqlM c) -&gt; SqlM c
+$cbracket_ :: forall a b c. SqlM a -&gt; SqlM b -&gt; SqlM c -&gt; SqlM c
+bracket_ :: forall a b c. SqlM a -&gt; SqlM b -&gt; SqlM c -&gt; SqlM c
+$cfinally :: forall a b. SqlM a -&gt; SqlM b -&gt; SqlM a
+finally :: forall a b. SqlM a -&gt; SqlM b -&gt; SqlM a
+$cannotateIO :: forall e a. ExceptionAnnotation e =&gt; e -&gt; SqlM a -&gt; SqlM a
+annotateIO :: forall e a. ExceptionAnnotation e =&gt; e -&gt; SqlM a -&gt; SqlM a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">MonadThrow</span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679082221"><span id="local-6989586621679082231"><span id="local-6989586621679082240"><span id="local-6989586621679082249"><span id="local-6989586621679082258"><span id="local-6989586621679082267"><span id="local-6989586621679082274"><span id="local-6989586621679082279"><span id="local-6989586621679082284"><span class="annot"><span class="annottext">MonadThrow SqlM
+MonadThrow SqlM =&gt;
+(forall e a. Exception e =&gt; SqlM a -&gt; (e -&gt; SqlM a) -&gt; SqlM a)
+-&gt; (forall e b a.
+    Exception e =&gt;
+    (e -&gt; Maybe b) -&gt; SqlM a -&gt; (b -&gt; SqlM a) -&gt; SqlM a)
+-&gt; (forall e a. Exception e =&gt; SqlM a -&gt; SqlM (Either e a))
+-&gt; (forall e b a.
+    Exception e =&gt;
+    (e -&gt; Maybe b) -&gt; SqlM a -&gt; SqlM (Either b a))
+-&gt; (forall e a. Exception e =&gt; (e -&gt; SqlM a) -&gt; SqlM a -&gt; SqlM a)
+-&gt; (forall e b a.
+    Exception e =&gt;
+    (e -&gt; Maybe b) -&gt; (b -&gt; SqlM a) -&gt; SqlM a -&gt; SqlM a)
+-&gt; (forall a b. SqlM a -&gt; SqlM b -&gt; SqlM a)
+-&gt; (forall a b c.
+    SqlM a -&gt; (a -&gt; SqlM b) -&gt; (a -&gt; SqlM c) -&gt; SqlM c)
+-&gt; (forall a b c.
+    SqlM a
+    -&gt; (a -&gt; ExitCase b -&gt; SqlM c) -&gt; (a -&gt; SqlM b) -&gt; SqlM (b, c))
+-&gt; MonadCatch SqlM
+forall e a. Exception e =&gt; SqlM a -&gt; SqlM (Either e a)
+forall e a. Exception e =&gt; SqlM a -&gt; (e -&gt; SqlM a) -&gt; SqlM a
+forall e a. Exception e =&gt; (e -&gt; SqlM a) -&gt; SqlM a -&gt; SqlM a
+forall a b. SqlM a -&gt; SqlM b -&gt; SqlM a
+forall e b a.
+Exception e =&gt;
+(e -&gt; Maybe b) -&gt; SqlM a -&gt; SqlM (Either b a)
+forall e b a.
+Exception e =&gt;
+(e -&gt; Maybe b) -&gt; SqlM a -&gt; (b -&gt; SqlM a) -&gt; SqlM a
+forall e b a.
+Exception e =&gt;
+(e -&gt; Maybe b) -&gt; (b -&gt; SqlM a) -&gt; SqlM a -&gt; SqlM a
+forall a b c. SqlM a -&gt; (a -&gt; SqlM b) -&gt; (a -&gt; SqlM c) -&gt; SqlM c
+forall a b c.
+SqlM a
+-&gt; (a -&gt; ExitCase b -&gt; SqlM c) -&gt; (a -&gt; SqlM b) -&gt; SqlM (b, c)
+forall (m :: * -&gt; *).
+MonadThrow m =&gt;
+(forall e a. Exception e =&gt; m a -&gt; (e -&gt; m a) -&gt; m a)
+-&gt; (forall e b a.
+    Exception e =&gt;
+    (e -&gt; Maybe b) -&gt; m a -&gt; (b -&gt; m a) -&gt; m a)
+-&gt; (forall e a. Exception e =&gt; m a -&gt; m (Either e a))
+-&gt; (forall e b a.
+    Exception e =&gt;
+    (e -&gt; Maybe b) -&gt; m a -&gt; m (Either b a))
+-&gt; (forall e a. Exception e =&gt; (e -&gt; m a) -&gt; m a -&gt; m a)
+-&gt; (forall e b a.
+    Exception e =&gt;
+    (e -&gt; Maybe b) -&gt; (b -&gt; m a) -&gt; m a -&gt; m a)
+-&gt; (forall a b. m a -&gt; m b -&gt; m a)
+-&gt; (forall a b c. m a -&gt; (a -&gt; m b) -&gt; (a -&gt; m c) -&gt; m c)
+-&gt; (forall a b c.
+    m a -&gt; (a -&gt; ExitCase b -&gt; m c) -&gt; (a -&gt; m b) -&gt; m (b, c))
+-&gt; MonadCatch m
+$ccatch :: forall e a. Exception e =&gt; SqlM a -&gt; (e -&gt; SqlM a) -&gt; SqlM a
+catch :: forall e a. Exception e =&gt; SqlM a -&gt; (e -&gt; SqlM a) -&gt; SqlM a
+$ccatchJust :: forall e b a.
+Exception e =&gt;
+(e -&gt; Maybe b) -&gt; SqlM a -&gt; (b -&gt; SqlM a) -&gt; SqlM a
+catchJust :: forall e b a.
+Exception e =&gt;
+(e -&gt; Maybe b) -&gt; SqlM a -&gt; (b -&gt; SqlM a) -&gt; SqlM a
+$ctry :: forall e a. Exception e =&gt; SqlM a -&gt; SqlM (Either e a)
+try :: forall e a. Exception e =&gt; SqlM a -&gt; SqlM (Either e a)
+$ctryJust :: forall e b a.
+Exception e =&gt;
+(e -&gt; Maybe b) -&gt; SqlM a -&gt; SqlM (Either b a)
+tryJust :: forall e b a.
+Exception e =&gt;
+(e -&gt; Maybe b) -&gt; SqlM a -&gt; SqlM (Either b a)
+$chandle :: forall e a. Exception e =&gt; (e -&gt; SqlM a) -&gt; SqlM a -&gt; SqlM a
+handle :: forall e a. Exception e =&gt; (e -&gt; SqlM a) -&gt; SqlM a -&gt; SqlM a
+$chandleJust :: forall e b a.
+Exception e =&gt;
+(e -&gt; Maybe b) -&gt; (b -&gt; SqlM a) -&gt; SqlM a -&gt; SqlM a
+handleJust :: forall e b a.
+Exception e =&gt;
+(e -&gt; Maybe b) -&gt; (b -&gt; SqlM a) -&gt; SqlM a -&gt; SqlM a
+$conException :: forall a b. SqlM a -&gt; SqlM b -&gt; SqlM a
+onException :: forall a b. SqlM a -&gt; SqlM b -&gt; SqlM a
+$cbracketOnError :: forall a b c. SqlM a -&gt; (a -&gt; SqlM b) -&gt; (a -&gt; SqlM c) -&gt; SqlM c
+bracketOnError :: forall a b c. SqlM a -&gt; (a -&gt; SqlM b) -&gt; (a -&gt; SqlM c) -&gt; SqlM c
+$cgeneralBracket :: forall a b c.
+SqlM a
+-&gt; (a -&gt; ExitCase b -&gt; SqlM c) -&gt; (a -&gt; SqlM b) -&gt; SqlM (b, c)
+generalBracket :: forall a b c.
+SqlM a
+-&gt; (a -&gt; ExitCase b -&gt; SqlM c) -&gt; (a -&gt; SqlM b) -&gt; SqlM (b, c)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">MonadCatch</span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span class="annot"><span class="hs-comment">{- | Atomically run a computation from the 'SqlM' monad.
+
+* exceptions &#8212; The change to the database state performed by 'SqlM'
+  completes either fully or not at all.
+  If the computation throws an exception, then any intermediate
+  state change is rolled back.
+  (Essentially, the computation is wrapped in 'Sqlite.withTransaction'.)
+* concurrency &#8212; A lock ensures that multiple calls to 'runSqlM'
+  are run in sequence.
+-}</span></span><span>
+</span><span id="line-116"></span><span id="local-6989586621679082057"><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#runSqlM"><span class="hs-identifier hs-type">runSqlM</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#SqlM"><span class="hs-identifier hs-type">SqlM</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082057"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#Connection"><span class="hs-identifier hs-type">Connection</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="#local-6989586621679082057"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-117"></span><span id="runSqlM"><span class="annot"><span class="annottext">runSqlM :: forall a. SqlM a -&gt; Connection -&gt; IO a
+</span><a href="Database.Table.SQLite.Simple.Monad.html#runSqlM"><span class="hs-identifier hs-var hs-var">runSqlM</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#SqlM"><span class="hs-identifier hs-type">SqlM</span></a></span><span> </span><span id="local-6989586621679082301"><span class="annot"><span class="annottext">ReaderT Connection IO a
+</span><a href="#local-6989586621679082301"><span class="hs-identifier hs-var">action</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#Connection"><span class="hs-identifier hs-type">Connection</span></a></span><span class="hs-special">{</span><span id="local-6989586621679082302"><span class="annot"><span class="annottext">MVar ()
+lock :: Connection -&gt; MVar ()
+lock :: MVar ()
+</span><a href="Database.Table.SQLite.Simple.Monad.html#lock"><span class="hs-identifier hs-var hs-var">lock</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679082303"><span class="annot"><span class="annottext">Connection
+connection :: Connection -&gt; Connection
+connection :: Connection
+</span><a href="Database.Table.SQLite.Simple.Monad.html#connection"><span class="hs-identifier hs-var hs-var">connection</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-118"></span><span>    </span><span class="annot"><span class="annottext">MVar () -&gt; (() -&gt; IO a) -&gt; IO a
+forall a b. MVar a -&gt; (a -&gt; IO b) -&gt; IO b
+</span><span class="hs-identifier hs-var">withMVar</span></span><span> </span><span class="annot"><span class="annottext">MVar ()
+</span><a href="#local-6989586621679082302"><span class="hs-identifier hs-var">lock</span></a></span><span> </span><span class="annot"><span class="annottext">((() -&gt; IO a) -&gt; IO a) -&gt; (() -&gt; IO a) -&gt; IO a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-119"></span><span>        </span><span class="annot"><span class="annottext">Connection -&gt; IO a -&gt; IO a
+forall a. Connection -&gt; IO a -&gt; IO a
+</span><span class="hs-identifier hs-var">Sqlite.withTransaction</span></span><span> </span><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679082303"><span class="hs-identifier hs-var">connection</span></a></span><span> </span><span class="annot"><span class="annottext">(IO a -&gt; IO a) -&gt; IO a -&gt; IO a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-120"></span><span>            </span><span class="annot"><span class="annottext">ReaderT Connection IO a -&gt; Connection -&gt; IO a
+forall r (m :: * -&gt; *) a. ReaderT r m a -&gt; r -&gt; m a
+</span><span class="hs-identifier hs-var">runReaderT</span></span><span> </span><span class="annot"><span class="annottext">ReaderT Connection IO a
+</span><a href="#local-6989586621679082301"><span class="hs-identifier hs-var">action</span></a></span><span> </span><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679082303"><span class="hs-identifier hs-var">connection</span></a></span><span>
+</span><span id="line-121"></span><span>
+</span><span id="line-122"></span><span class="annot"><span class="hs-comment">-- | Wrap a function from &quot;Database.SQLite.Simple&quot; in 'SqlM'.</span></span><span>
+</span><span id="line-123"></span><span id="local-6989586621679082065"><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#rawSqlite"><span class="hs-identifier hs-type">rawSqlite</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Sqlite.Connection</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="#local-6989586621679082065"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#SqlM"><span class="hs-identifier hs-type">SqlM</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082065"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-124"></span><span id="rawSqlite"><span class="annot"><span class="annottext">rawSqlite :: forall a. (Connection -&gt; IO a) -&gt; SqlM a
+</span><a href="Database.Table.SQLite.Simple.Monad.html#rawSqlite"><span class="hs-identifier hs-var hs-var">rawSqlite</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ReaderT Connection IO a -&gt; SqlM a
+forall a. ReaderT Connection IO a -&gt; SqlM a
+</span><a href="Database.Table.SQLite.Simple.Monad.html#SqlM"><span class="hs-identifier hs-var">SqlM</span></a></span><span> </span><span class="annot"><span class="annottext">(ReaderT Connection IO a -&gt; SqlM a)
+-&gt; ((Connection -&gt; IO a) -&gt; ReaderT Connection IO a)
+-&gt; (Connection -&gt; IO a)
+-&gt; SqlM a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(Connection -&gt; IO a) -&gt; ReaderT Connection IO a
+forall r (m :: * -&gt; *) a. (r -&gt; m a) -&gt; ReaderT r m a
+</span><span class="hs-identifier hs-var">ReaderT</span></span><span>
+</span><span id="line-125"></span><span>
+</span><span id="line-126"></span><span class="annot"><span class="hs-comment">-- | Union of exceptions that can occur with &quot;Database.SQLite.Simple&quot;.</span></span><span>
+</span><span id="line-127"></span><span class="hs-keyword">data</span><span> </span><span id="SqlException"><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#SqlException"><span class="hs-identifier hs-var">SqlException</span></a></span></span><span>
+</span><span id="line-128"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="SqlFormatError"><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#SqlFormatError"><span class="hs-identifier hs-var">SqlFormatError</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sqlite.FormatError</span></span><span>
+</span><span id="line-129"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="SqlResultError"><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#SqlResultError"><span class="hs-identifier hs-var">SqlResultError</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sqlite.ResultError</span></span><span>
+</span><span id="line-130"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="SqlSQLError"><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#SqlSQLError"><span class="hs-identifier hs-var">SqlSQLError</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sqlite.SQLError</span></span><span>
+</span><span id="line-131"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679082311"><span id="local-6989586621679082322"><span class="annot"><span class="annottext">SqlException -&gt; SqlException -&gt; Bool
+(SqlException -&gt; SqlException -&gt; Bool)
+-&gt; (SqlException -&gt; SqlException -&gt; Bool) -&gt; Eq SqlException
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: SqlException -&gt; SqlException -&gt; Bool
+== :: SqlException -&gt; SqlException -&gt; Bool
+$c/= :: SqlException -&gt; SqlException -&gt; Bool
+/= :: SqlException -&gt; SqlException -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679082327"><span id="local-6989586621679082339"><span id="local-6989586621679082343"><span class="annot"><span class="annottext">Int -&gt; SqlException -&gt; ShowS
+[SqlException] -&gt; ShowS
+SqlException -&gt; FilePath
+(Int -&gt; SqlException -&gt; ShowS)
+-&gt; (SqlException -&gt; FilePath)
+-&gt; ([SqlException] -&gt; ShowS)
+-&gt; Show SqlException
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; FilePath) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; SqlException -&gt; ShowS
+showsPrec :: Int -&gt; SqlException -&gt; ShowS
+$cshow :: SqlException -&gt; FilePath
+show :: SqlException -&gt; FilePath
+$cshowList :: [SqlException] -&gt; ShowS
+showList :: [SqlException] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-132"></span><span>
+</span><span id="line-133"></span><span class="hs-comment">-- | When converting to and from 'SomeException',</span><span>
+</span><span id="line-134"></span><span class="hs-comment">-- the constructors of the 'SqlException' type are stripped.</span><span>
+</span><span id="line-135"></span><span class="hs-comment">-- In other words, the type 'SqlException' represents a structural union,</span><span>
+</span><span id="line-136"></span><span class="hs-comment">-- not a nominal sum of the individual exceptions.</span><span>
+</span><span id="line-137"></span><span class="hs-comment">-- This makes it easier to catch the individual exceptions as a union.</span><span>
+</span><span id="line-138"></span><span class="hs-comment">--</span><span>
+</span><span id="line-139"></span><span class="hs-comment">-- Example:</span><span>
+</span><span id="line-140"></span><span class="hs-comment">--</span><span>
+</span><span id="line-141"></span><span class="hs-comment">-- &gt; throw (Sqlite.SQLError Sqlite.ErrorIOData &quot;&quot; &quot;&quot;)</span><span>
+</span><span id="line-142"></span><span class="hs-comment">-- &gt;     `catch` \e -&gt; print (e :: SqlException)</span><span>
+</span><span id="line-143"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679082355"><span id="local-6989586621679082359"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#SqlException"><span class="hs-identifier hs-type">SqlException</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-144"></span><span>    </span><span id="local-6989586621679082371"><span class="annot"><span class="annottext">toException :: SqlException -&gt; SomeException
+</span><a href="#local-6989586621679082371"><span class="hs-identifier hs-var hs-var hs-var">toException</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#SqlFormatError"><span class="hs-identifier hs-type">SqlFormatError</span></a></span><span> </span><span id="local-6989586621679082373"><span class="annot"><span class="annottext">FormatError
+</span><a href="#local-6989586621679082373"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FormatError -&gt; SomeException
+forall e. (Exception e, HasExceptionContext) =&gt; e -&gt; SomeException
+</span><span class="hs-identifier hs-var">SomeException</span></span><span> </span><span class="annot"><span class="annottext">FormatError
+</span><a href="#local-6989586621679082373"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-145"></span><span>    </span><span class="annot"><span class="hs-identifier hs-var">toException</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#SqlResultError"><span class="hs-identifier hs-type">SqlResultError</span></a></span><span> </span><span id="local-6989586621679082374"><span class="annot"><span class="annottext">ResultError
+</span><a href="#local-6989586621679082374"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ResultError -&gt; SomeException
+forall e. (Exception e, HasExceptionContext) =&gt; e -&gt; SomeException
+</span><span class="hs-identifier hs-var">SomeException</span></span><span> </span><span class="annot"><span class="annottext">ResultError
+</span><a href="#local-6989586621679082374"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-146"></span><span>    </span><span class="annot"><span class="hs-identifier hs-var">toException</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQLite.Simple.Monad.html#SqlSQLError"><span class="hs-identifier hs-type">SqlSQLError</span></a></span><span> </span><span id="local-6989586621679082375"><span class="annot"><span class="annottext">SQLError
+</span><a href="#local-6989586621679082375"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SQLError -&gt; SomeException
+forall e. (Exception e, HasExceptionContext) =&gt; e -&gt; SomeException
+</span><span class="hs-identifier hs-var">SomeException</span></span><span> </span><span class="annot"><span class="annottext">SQLError
+</span><a href="#local-6989586621679082375"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-147"></span><span>    </span><span id="local-6989586621679082379"><span class="annot"><span class="annottext">fromException :: SomeException -&gt; Maybe SqlException
+</span><a href="#local-6989586621679082379"><span class="hs-identifier hs-var hs-var hs-var">fromException</span></a></span></span><span> </span><span id="local-6989586621679082381"><span class="annot"><span class="annottext">SomeException
+</span><a href="#local-6989586621679082381"><span class="hs-identifier hs-var">e0</span></a></span></span><span>
+</span><span id="line-148"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679082382"><span class="annot"><span class="annottext">FormatError
+</span><a href="#local-6989586621679082382"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">SomeException -&gt; Maybe FormatError
+forall e. Exception e =&gt; SomeException -&gt; Maybe e
+</span><span class="hs-identifier hs-var">fromException</span></span><span> </span><span class="annot"><span class="annottext">SomeException
+</span><a href="#local-6989586621679082381"><span class="hs-identifier hs-var">e0</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SqlException -&gt; Maybe SqlException
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(SqlException -&gt; Maybe SqlException)
+-&gt; SqlException -&gt; Maybe SqlException
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">FormatError -&gt; SqlException
+</span><a href="Database.Table.SQLite.Simple.Monad.html#SqlFormatError"><span class="hs-identifier hs-var">SqlFormatError</span></a></span><span> </span><span class="annot"><span class="annottext">FormatError
+</span><a href="#local-6989586621679082382"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-149"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679082383"><span class="annot"><span class="annottext">ResultError
+</span><a href="#local-6989586621679082383"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">SomeException -&gt; Maybe ResultError
+forall e. Exception e =&gt; SomeException -&gt; Maybe e
+</span><span class="hs-identifier hs-var">fromException</span></span><span> </span><span class="annot"><span class="annottext">SomeException
+</span><a href="#local-6989586621679082381"><span class="hs-identifier hs-var">e0</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SqlException -&gt; Maybe SqlException
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(SqlException -&gt; Maybe SqlException)
+-&gt; SqlException -&gt; Maybe SqlException
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ResultError -&gt; SqlException
+</span><a href="Database.Table.SQLite.Simple.Monad.html#SqlResultError"><span class="hs-identifier hs-var">SqlResultError</span></a></span><span> </span><span class="annot"><span class="annottext">ResultError
+</span><a href="#local-6989586621679082383"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-150"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679082384"><span class="annot"><span class="annottext">SQLError
+</span><a href="#local-6989586621679082384"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">SomeException -&gt; Maybe SQLError
+forall e. Exception e =&gt; SomeException -&gt; Maybe e
+</span><span class="hs-identifier hs-var">fromException</span></span><span> </span><span class="annot"><span class="annottext">SomeException
+</span><a href="#local-6989586621679082381"><span class="hs-identifier hs-var">e0</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SqlException -&gt; Maybe SqlException
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(SqlException -&gt; Maybe SqlException)
+-&gt; SqlException -&gt; Maybe SqlException
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">SQLError -&gt; SqlException
+</span><a href="Database.Table.SQLite.Simple.Monad.html#SqlSQLError"><span class="hs-identifier hs-var">SqlSQLError</span></a></span><span> </span><span class="annot"><span class="annottext">SQLError
+</span><a href="#local-6989586621679082384"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-151"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe SqlException
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-152"></span></pre></body></html>

@@ -1,0 +1,465 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE ConstraintKinds #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DataKinds #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE TypeOperators #-}</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="annot"><span class="hs-comment">{- |
+Copyright: &#169; 2024 Cardano Foundation
+License: Apache-2.0
+
+The type 'Table' represents the schema for a table in a relational database.
+We use it to
+
+* track __table names__ and __column names__ on the type level, and to
+* track __column types__ as Haskell types.
+
+More precisely, the schema for a table is represented by the combination
+of the types 'Table', '(:.)', and 'Col'.
+Every table schema is an instance of the 'IsTable' class.
+
+Example: The following type is the schema for a database table
+with name @person@ and two columns, @name@ and @birthyear@,
+whose Haskell types are @Text@ and @Int@, respectively.
+
+&gt; type ExampleTable =
+&gt;     Table &quot;person&quot;
+&gt;         :. Col &quot;name&quot; Text
+&gt;         :. Col &quot;birthyear&quot; Int
+
+The type 'Table' does __not contain__ any data.
+Instead, use the 'Row' type family to map a table schema
+to a type that contains one row worth of data.
+
+Example: The following value is one potential row of a table that matches
+the table schema 'ExampleTable'.
+
+&gt; exampleRow :: Row ExampleTable
+&gt; exampleRow = (&quot;Ada Lovelace&quot;, 1815)
+
+The types in this module are general,
+and not specific to any particular SQL implementation.
+-}</span></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Database.Table.Schema.html"><span class="hs-identifier">Database.Table.Schema</span></a></span><span>
+</span><span id="line-45"></span><span>    </span><span class="hs-special">(</span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Table schema</span></span><span>
+</span><span id="line-47"></span><span>      </span><span class="annot"><a href="Database.Table.Schema.html#IsTable"><span class="hs-identifier">IsTable</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.Schema.html#getColumnNames"><span class="hs-identifier">getColumnNames</span></a></span><span>
+</span><span id="line-49"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Table"><span class="hs-identifier">Table</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier">Col</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator">(:.)</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.Schema.html#IsColumnName"><span class="hs-identifier">IsColumnName</span></a></span><span>
+</span><span id="line-54"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.Schema.html#getColumnName"><span class="hs-identifier">getColumnName</span></a></span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Table data: Row</span></span><span>
+</span><span id="line-57"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Row"><span class="hs-identifier">Row</span></a></span><span>
+</span><span id="line-58"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">Only</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Prelude</span></span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Foldable</span></span><span>
+</span><span id="line-64"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">toList</span></span><span>
+</span><span id="line-65"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-66"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Proxy</span></span><span>
+</span><span id="line-67"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Proxy</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-68"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Sequence</span></span><span>
+</span><span id="line-70"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Seq</span></span><span>
+</span><span id="line-71"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">empty</span></span><span>
+</span><span id="line-72"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(|&gt;)</span></span><span>
+</span><span id="line-73"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span>
+</span><span id="line-75"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Text</span></span><span>
+</span><span id="line-76"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Tuple.Only</span></span><span>
+</span><span id="line-78"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Only</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-79"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-80"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.TypeLits</span></span><span>
+</span><span id="line-81"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">KnownSymbol</span></span><span>
+</span><span id="line-82"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">Symbol</span></span><span>
+</span><span id="line-83"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">symbolVal</span></span><span>
+</span><span id="line-84"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    Class
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-91"></span><span class="hs-comment">-- | Class of named tables with named columns.</span><span>
+</span><span id="line-92"></span><span class="hs-comment">--</span><span>
+</span><span id="line-93"></span><span class="hs-comment">-- The data contained in the table is essentially a list of rows</span><span>
+</span><span id="line-94"></span><span class="hs-comment">-- with the given column names.</span><span>
+</span><span id="line-95"></span><span class="hs-keyword">class</span><span> </span><span id="IsTable"><span class="annot"><a href="Database.Table.Schema.html#IsTable"><span class="hs-identifier hs-var">IsTable</span></a></span></span><span> </span><span id="local-6989586621679082397"><span class="annot"><a href="#local-6989586621679082397"><span class="hs-identifier hs-type">t</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-96"></span><span>    </span><span id="getTableName"><span class="annot"><a href="Database.Table.Schema.html#getTableName"><span class="hs-identifier hs-type">getTableName</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span id="local-6989586621679082457"><span class="annot"><a href="#local-6989586621679082457"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082397"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span></span><span>
+</span><span id="line-97"></span><span>    </span><span id="getColumnNamesSeq"><span class="annot"><a href="Database.Table.Schema.html#getColumnNamesSeq"><span class="hs-identifier hs-type">getColumnNamesSeq</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span id="local-6989586621679082398"><span class="annot"><a href="#local-6989586621679082398"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082397"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Seq</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span></span><span>
+</span><span id="line-98"></span><span>
+</span><span id="line-99"></span><span id="local-6989586621679082385"><span id="local-6989586621679082387"><span class="annot"><a href="Database.Table.Schema.html#getColumnNames"><span class="hs-identifier hs-type">getColumnNames</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.Schema.html#IsTable"><span class="hs-identifier hs-type">IsTable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082385"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679082387"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082385"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-100"></span><span id="getColumnNames"><span class="annot"><span class="annottext">getColumnNames :: forall t (proxy :: * -&gt; *). IsTable t =&gt; proxy t -&gt; [Text]
+</span><a href="Database.Table.Schema.html#getColumnNames"><span class="hs-identifier hs-var hs-var">getColumnNames</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Seq Text -&gt; [Text]
+forall a. Seq a -&gt; [a]
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; [a]
+</span><span class="hs-identifier hs-var">toList</span></span><span> </span><span class="annot"><span class="annottext">(Seq Text -&gt; [Text]) -&gt; (proxy t -&gt; Seq Text) -&gt; proxy t -&gt; [Text]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">proxy t -&gt; Seq Text
+forall t (proxy :: * -&gt; *). IsTable t =&gt; proxy t -&gt; Seq Text
+forall (proxy :: * -&gt; *). proxy t -&gt; Seq Text
+</span><a href="Database.Table.Schema.html#getColumnNamesSeq"><span class="hs-identifier hs-var">getColumnNamesSeq</span></a></span><span>
+</span><span id="line-101"></span><span>
+</span><span id="line-102"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    Type
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-105"></span><span class="annot"><span class="hs-comment">-- | Infix notation for a pair of types.</span></span><span>
+</span><span id="line-106"></span><span class="hs-keyword">data</span><span> </span><span id="local-6989586621679082490"><span class="annot"><a href="#local-6989586621679082490"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span id="%3A."><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-var">:.</span></a></span></span><span> </span><span id="local-6989586621679082491"><span class="annot"><a href="#local-6989586621679082491"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679082490"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span id="%3A."><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-var">:.</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621679082491"><span class="hs-identifier hs-type">b</span></a></span><span>
+</span><span id="line-107"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679082495"><span id="local-6989586621679082499"><span class="annot"><span class="annottext">(a :. b) -&gt; (a :. b) -&gt; Bool
+((a :. b) -&gt; (a :. b) -&gt; Bool)
+-&gt; ((a :. b) -&gt; (a :. b) -&gt; Bool) -&gt; Eq (a :. b)
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+forall a b. (Eq a, Eq b) =&gt; (a :. b) -&gt; (a :. b) -&gt; Bool
+$c== :: forall a b. (Eq a, Eq b) =&gt; (a :. b) -&gt; (a :. b) -&gt; Bool
+== :: (a :. b) -&gt; (a :. b) -&gt; Bool
+$c/= :: forall a b. (Eq a, Eq b) =&gt; (a :. b) -&gt; (a :. b) -&gt; Bool
+/= :: (a :. b) -&gt; (a :. b) -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679082510"><span id="local-6989586621679082514"><span id="local-6989586621679082518"><span id="local-6989586621679082522"><span id="local-6989586621679082525"><span id="local-6989586621679082528"><span id="local-6989586621679082531"><span class="annot"><span class="annottext">Eq (a :. b)
+Eq (a :. b) =&gt;
+((a :. b) -&gt; (a :. b) -&gt; Ordering)
+-&gt; ((a :. b) -&gt; (a :. b) -&gt; Bool)
+-&gt; ((a :. b) -&gt; (a :. b) -&gt; Bool)
+-&gt; ((a :. b) -&gt; (a :. b) -&gt; Bool)
+-&gt; ((a :. b) -&gt; (a :. b) -&gt; Bool)
+-&gt; ((a :. b) -&gt; (a :. b) -&gt; a :. b)
+-&gt; ((a :. b) -&gt; (a :. b) -&gt; a :. b)
+-&gt; Ord (a :. b)
+(a :. b) -&gt; (a :. b) -&gt; Bool
+(a :. b) -&gt; (a :. b) -&gt; Ordering
+(a :. b) -&gt; (a :. b) -&gt; a :. b
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall a b. (Ord a, Ord b) =&gt; Eq (a :. b)
+forall a b. (Ord a, Ord b) =&gt; (a :. b) -&gt; (a :. b) -&gt; Bool
+forall a b. (Ord a, Ord b) =&gt; (a :. b) -&gt; (a :. b) -&gt; Ordering
+forall a b. (Ord a, Ord b) =&gt; (a :. b) -&gt; (a :. b) -&gt; a :. b
+$ccompare :: forall a b. (Ord a, Ord b) =&gt; (a :. b) -&gt; (a :. b) -&gt; Ordering
+compare :: (a :. b) -&gt; (a :. b) -&gt; Ordering
+$c&lt; :: forall a b. (Ord a, Ord b) =&gt; (a :. b) -&gt; (a :. b) -&gt; Bool
+&lt; :: (a :. b) -&gt; (a :. b) -&gt; Bool
+$c&lt;= :: forall a b. (Ord a, Ord b) =&gt; (a :. b) -&gt; (a :. b) -&gt; Bool
+&lt;= :: (a :. b) -&gt; (a :. b) -&gt; Bool
+$c&gt; :: forall a b. (Ord a, Ord b) =&gt; (a :. b) -&gt; (a :. b) -&gt; Bool
+&gt; :: (a :. b) -&gt; (a :. b) -&gt; Bool
+$c&gt;= :: forall a b. (Ord a, Ord b) =&gt; (a :. b) -&gt; (a :. b) -&gt; Bool
+&gt;= :: (a :. b) -&gt; (a :. b) -&gt; Bool
+$cmax :: forall a b. (Ord a, Ord b) =&gt; (a :. b) -&gt; (a :. b) -&gt; a :. b
+max :: (a :. b) -&gt; (a :. b) -&gt; a :. b
+$cmin :: forall a b. (Ord a, Ord b) =&gt; (a :. b) -&gt; (a :. b) -&gt; a :. b
+min :: (a :. b) -&gt; (a :. b) -&gt; a :. b
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679082542"><span id="local-6989586621679082548"><span id="local-6989586621679082552"><span class="annot"><span class="annottext">Int -&gt; (a :. b) -&gt; ShowS
+[a :. b] -&gt; ShowS
+(a :. b) -&gt; String
+(Int -&gt; (a :. b) -&gt; ShowS)
+-&gt; ((a :. b) -&gt; String) -&gt; ([a :. b] -&gt; ShowS) -&gt; Show (a :. b)
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+forall a b. (Show a, Show b) =&gt; Int -&gt; (a :. b) -&gt; ShowS
+forall a b. (Show a, Show b) =&gt; [a :. b] -&gt; ShowS
+forall a b. (Show a, Show b) =&gt; (a :. b) -&gt; String
+$cshowsPrec :: forall a b. (Show a, Show b) =&gt; Int -&gt; (a :. b) -&gt; ShowS
+showsPrec :: Int -&gt; (a :. b) -&gt; ShowS
+$cshow :: forall a b. (Show a, Show b) =&gt; (a :. b) -&gt; String
+show :: (a :. b) -&gt; String
+$cshowList :: forall a b. (Show a, Show b) =&gt; [a :. b] -&gt; ShowS
+showList :: [a :. b] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679082559"><span id="local-6989586621679082563"><span id="local-6989586621679082566"><span id="local-6989586621679082575"><span class="annot"><span class="annottext">ReadPrec [a :. b]
+ReadPrec (a :. b)
+Int -&gt; ReadS (a :. b)
+ReadS [a :. b]
+(Int -&gt; ReadS (a :. b))
+-&gt; ReadS [a :. b]
+-&gt; ReadPrec (a :. b)
+-&gt; ReadPrec [a :. b]
+-&gt; Read (a :. b)
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+forall a b. (Read a, Read b) =&gt; ReadPrec [a :. b]
+forall a b. (Read a, Read b) =&gt; ReadPrec (a :. b)
+forall a b. (Read a, Read b) =&gt; Int -&gt; ReadS (a :. b)
+forall a b. (Read a, Read b) =&gt; ReadS [a :. b]
+$creadsPrec :: forall a b. (Read a, Read b) =&gt; Int -&gt; ReadS (a :. b)
+readsPrec :: Int -&gt; ReadS (a :. b)
+$creadList :: forall a b. (Read a, Read b) =&gt; ReadS [a :. b]
+readList :: ReadS [a :. b]
+$creadPrec :: forall a b. (Read a, Read b) =&gt; ReadPrec (a :. b)
+readPrec :: ReadPrec (a :. b)
+$creadListPrec :: forall a b. (Read a, Read b) =&gt; ReadPrec [a :. b]
+readListPrec :: ReadPrec [a :. b]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-108"></span><span class="hs-keyword">infixl</span><span> </span><span class="hs-number">3</span><span> </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type hs-type">:.</span></a></span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span class="annot"><span class="hs-comment">-- | Named database column.</span></span><span>
+</span><span id="line-111"></span><span class="hs-keyword">data</span><span> </span><span id="Col"><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-var">Col</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679082581"><span class="annot"><a href="#local-6989586621679082581"><span class="hs-identifier hs-type">name</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Symbol</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679082582"><span class="annot"><a href="#local-6989586621679082582"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Col"><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-var">Col</span></a></span></span><span>
+</span><span id="line-112"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679082584"><span id="local-6989586621679082586"><span class="annot"><span class="annottext">Col name a -&gt; Col name a -&gt; Bool
+(Col name a -&gt; Col name a -&gt; Bool)
+-&gt; (Col name a -&gt; Col name a -&gt; Bool) -&gt; Eq (Col name a)
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+forall (name :: Symbol) a. Col name a -&gt; Col name a -&gt; Bool
+$c== :: forall (name :: Symbol) a. Col name a -&gt; Col name a -&gt; Bool
+== :: Col name a -&gt; Col name a -&gt; Bool
+$c/= :: forall (name :: Symbol) a. Col name a -&gt; Col name a -&gt; Bool
+/= :: Col name a -&gt; Col name a -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679082592"><span id="local-6989586621679082594"><span id="local-6989586621679082596"><span id="local-6989586621679082600"><span id="local-6989586621679082603"><span id="local-6989586621679082606"><span id="local-6989586621679082609"><span class="annot"><span class="annottext">Eq (Col name a)
+Eq (Col name a) =&gt;
+(Col name a -&gt; Col name a -&gt; Ordering)
+-&gt; (Col name a -&gt; Col name a -&gt; Bool)
+-&gt; (Col name a -&gt; Col name a -&gt; Bool)
+-&gt; (Col name a -&gt; Col name a -&gt; Bool)
+-&gt; (Col name a -&gt; Col name a -&gt; Bool)
+-&gt; (Col name a -&gt; Col name a -&gt; Col name a)
+-&gt; (Col name a -&gt; Col name a -&gt; Col name a)
+-&gt; Ord (Col name a)
+Col name a -&gt; Col name a -&gt; Bool
+Col name a -&gt; Col name a -&gt; Ordering
+Col name a -&gt; Col name a -&gt; Col name a
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall (name :: Symbol) a. Eq (Col name a)
+forall (name :: Symbol) a. Col name a -&gt; Col name a -&gt; Bool
+forall (name :: Symbol) a. Col name a -&gt; Col name a -&gt; Ordering
+forall (name :: Symbol) a. Col name a -&gt; Col name a -&gt; Col name a
+$ccompare :: forall (name :: Symbol) a. Col name a -&gt; Col name a -&gt; Ordering
+compare :: Col name a -&gt; Col name a -&gt; Ordering
+$c&lt; :: forall (name :: Symbol) a. Col name a -&gt; Col name a -&gt; Bool
+&lt; :: Col name a -&gt; Col name a -&gt; Bool
+$c&lt;= :: forall (name :: Symbol) a. Col name a -&gt; Col name a -&gt; Bool
+&lt;= :: Col name a -&gt; Col name a -&gt; Bool
+$c&gt; :: forall (name :: Symbol) a. Col name a -&gt; Col name a -&gt; Bool
+&gt; :: Col name a -&gt; Col name a -&gt; Bool
+$c&gt;= :: forall (name :: Symbol) a. Col name a -&gt; Col name a -&gt; Bool
+&gt;= :: Col name a -&gt; Col name a -&gt; Bool
+$cmax :: forall (name :: Symbol) a. Col name a -&gt; Col name a -&gt; Col name a
+max :: Col name a -&gt; Col name a -&gt; Col name a
+$cmin :: forall (name :: Symbol) a. Col name a -&gt; Col name a -&gt; Col name a
+min :: Col name a -&gt; Col name a -&gt; Col name a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679082612"><span id="local-6989586621679082614"><span id="local-6989586621679082618"><span class="annot"><span class="annottext">Int -&gt; Col name a -&gt; ShowS
+[Col name a] -&gt; ShowS
+Col name a -&gt; String
+(Int -&gt; Col name a -&gt; ShowS)
+-&gt; (Col name a -&gt; String)
+-&gt; ([Col name a] -&gt; ShowS)
+-&gt; Show (Col name a)
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+forall (name :: Symbol) a. Int -&gt; Col name a -&gt; ShowS
+forall (name :: Symbol) a. [Col name a] -&gt; ShowS
+forall (name :: Symbol) a. Col name a -&gt; String
+$cshowsPrec :: forall (name :: Symbol) a. Int -&gt; Col name a -&gt; ShowS
+showsPrec :: Int -&gt; Col name a -&gt; ShowS
+$cshow :: forall (name :: Symbol) a. Col name a -&gt; String
+show :: Col name a -&gt; String
+$cshowList :: forall (name :: Symbol) a. [Col name a] -&gt; ShowS
+showList :: [Col name a] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-113"></span><span>
+</span><span id="line-114"></span><span class="annot"><span class="hs-comment">-- | Constraint synonym for 'getColName'.</span></span><span>
+</span><span id="line-115"></span><span class="hs-keyword">type</span><span> </span><span id="IsColumnName"><span class="annot"><a href="Database.Table.Schema.html#IsColumnName"><span class="hs-identifier hs-var">IsColumnName</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679082620"><span class="annot"><a href="#local-6989586621679082620"><span class="hs-identifier hs-type">name</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Symbol</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">KnownSymbol</span></span><span> </span><span class="annot"><a href="#local-6989586621679082620"><span class="hs-identifier hs-type">name</span></a></span><span>
+</span><span id="line-116"></span><span>
+</span><span id="line-117"></span><span class="annot"><span class="hs-comment">-- | Get the name of a column from its type.</span></span><span>
+</span><span id="line-118"></span><span class="annot"><a href="Database.Table.Schema.html#getColumnName"><span class="hs-identifier hs-type">getColumnName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679082436"><span class="annot"><a href="#local-6989586621679082436"><span class="hs-identifier hs-type">name</span></a></span></span><span> </span><span id="local-6989586621679082438"><span class="annot"><a href="#local-6989586621679082438"><span class="hs-identifier hs-type">a</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Database.Table.Schema.html#IsColumnName"><span class="hs-identifier hs-type">IsColumnName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082436"><span class="hs-identifier hs-type">name</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082436"><span class="hs-identifier hs-type">name</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082438"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-119"></span><span id="getColumnName"><span class="annot"><span class="annottext">getColumnName :: forall (name :: Symbol) a. IsColumnName name =&gt; Col name a -&gt; Text
+</span><a href="Database.Table.Schema.html#getColumnName"><span class="hs-identifier hs-var hs-var">getColumnName</span></a></span></span><span> </span><span class="annot"><span class="annottext">Col name a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
+</span><span class="hs-identifier hs-var">T.pack</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; Text) -&gt; String -&gt; Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Proxy name -&gt; String
+forall (n :: Symbol) (proxy :: Symbol -&gt; *).
+KnownSymbol n =&gt;
+proxy n -&gt; String
+</span><span class="hs-identifier hs-var">symbolVal</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy name
+forall {k} (t :: k). Proxy t
+</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679082436"><span class="hs-identifier hs-type">name</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-120"></span><span>
+</span><span id="line-121"></span><span class="annot"><span class="hs-comment">-- | Named database table.</span></span><span>
+</span><span id="line-122"></span><span class="hs-keyword">data</span><span> </span><span id="Table"><span class="annot"><a href="Database.Table.Schema.html#Table"><span class="hs-identifier hs-var">Table</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679082625"><span class="annot"><a href="#local-6989586621679082625"><span class="hs-identifier hs-type">name</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Symbol</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Table"><span class="annot"><a href="Database.Table.Schema.html#Table"><span class="hs-identifier hs-var">Table</span></a></span></span><span>
+</span><span id="line-123"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679082627"><span id="local-6989586621679082629"><span class="annot"><span class="annottext">Table name -&gt; Table name -&gt; Bool
+(Table name -&gt; Table name -&gt; Bool)
+-&gt; (Table name -&gt; Table name -&gt; Bool) -&gt; Eq (Table name)
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+forall (name :: Symbol). Table name -&gt; Table name -&gt; Bool
+$c== :: forall (name :: Symbol). Table name -&gt; Table name -&gt; Bool
+== :: Table name -&gt; Table name -&gt; Bool
+$c/= :: forall (name :: Symbol). Table name -&gt; Table name -&gt; Bool
+/= :: Table name -&gt; Table name -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679082635"><span id="local-6989586621679082637"><span id="local-6989586621679082639"><span id="local-6989586621679082643"><span id="local-6989586621679082646"><span id="local-6989586621679082649"><span id="local-6989586621679082652"><span class="annot"><span class="annottext">Eq (Table name)
+Eq (Table name) =&gt;
+(Table name -&gt; Table name -&gt; Ordering)
+-&gt; (Table name -&gt; Table name -&gt; Bool)
+-&gt; (Table name -&gt; Table name -&gt; Bool)
+-&gt; (Table name -&gt; Table name -&gt; Bool)
+-&gt; (Table name -&gt; Table name -&gt; Bool)
+-&gt; (Table name -&gt; Table name -&gt; Table name)
+-&gt; (Table name -&gt; Table name -&gt; Table name)
+-&gt; Ord (Table name)
+Table name -&gt; Table name -&gt; Bool
+Table name -&gt; Table name -&gt; Ordering
+Table name -&gt; Table name -&gt; Table name
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall (name :: Symbol). Eq (Table name)
+forall (name :: Symbol). Table name -&gt; Table name -&gt; Bool
+forall (name :: Symbol). Table name -&gt; Table name -&gt; Ordering
+forall (name :: Symbol). Table name -&gt; Table name -&gt; Table name
+$ccompare :: forall (name :: Symbol). Table name -&gt; Table name -&gt; Ordering
+compare :: Table name -&gt; Table name -&gt; Ordering
+$c&lt; :: forall (name :: Symbol). Table name -&gt; Table name -&gt; Bool
+&lt; :: Table name -&gt; Table name -&gt; Bool
+$c&lt;= :: forall (name :: Symbol). Table name -&gt; Table name -&gt; Bool
+&lt;= :: Table name -&gt; Table name -&gt; Bool
+$c&gt; :: forall (name :: Symbol). Table name -&gt; Table name -&gt; Bool
+&gt; :: Table name -&gt; Table name -&gt; Bool
+$c&gt;= :: forall (name :: Symbol). Table name -&gt; Table name -&gt; Bool
+&gt;= :: Table name -&gt; Table name -&gt; Bool
+$cmax :: forall (name :: Symbol). Table name -&gt; Table name -&gt; Table name
+max :: Table name -&gt; Table name -&gt; Table name
+$cmin :: forall (name :: Symbol). Table name -&gt; Table name -&gt; Table name
+min :: Table name -&gt; Table name -&gt; Table name
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679082655"><span id="local-6989586621679082657"><span id="local-6989586621679082661"><span class="annot"><span class="annottext">Int -&gt; Table name -&gt; ShowS
+[Table name] -&gt; ShowS
+Table name -&gt; String
+(Int -&gt; Table name -&gt; ShowS)
+-&gt; (Table name -&gt; String)
+-&gt; ([Table name] -&gt; ShowS)
+-&gt; Show (Table name)
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+forall (name :: Symbol). Int -&gt; Table name -&gt; ShowS
+forall (name :: Symbol). [Table name] -&gt; ShowS
+forall (name :: Symbol). Table name -&gt; String
+$cshowsPrec :: forall (name :: Symbol). Int -&gt; Table name -&gt; ShowS
+showsPrec :: Int -&gt; Table name -&gt; ShowS
+$cshow :: forall (name :: Symbol). Table name -&gt; String
+show :: Table name -&gt; String
+$cshowList :: forall (name :: Symbol). [Table name] -&gt; ShowS
+showList :: [Table name] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-124"></span><span>
+</span><span id="line-125"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679082459"><span class="annot"><span class="hs-identifier hs-type">KnownSymbol</span></span><span> </span><span class="annot"><a href="#local-6989586621679082459"><span class="hs-identifier hs-type">name</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Database.Table.Schema.html#IsTable"><span class="hs-identifier hs-type">IsTable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.Schema.html#Table"><span class="hs-identifier hs-type">Table</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082459"><span class="hs-identifier hs-type">name</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-126"></span><span>    </span><span id="local-6989586621679082669"><span class="annot"><span class="annottext">getTableName :: forall (proxy :: * -&gt; *). proxy (Table name) -&gt; Text
+</span><a href="Database.Table.Schema.html#getTableName"><span class="hs-identifier hs-var hs-var hs-var">getTableName</span></a></span></span><span> </span><span class="annot"><span class="annottext">proxy (Table name)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
+</span><span class="hs-identifier hs-var">T.pack</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; Text) -&gt; String -&gt; Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Proxy name -&gt; String
+forall (n :: Symbol) (proxy :: Symbol -&gt; *).
+KnownSymbol n =&gt;
+proxy n -&gt; String
+</span><span class="hs-identifier hs-var">symbolVal</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy name
+forall {k} (t :: k). Proxy t
+</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679082459"><span class="hs-identifier hs-type">name</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-127"></span><span>    </span><span id="local-6989586621679082670"><span class="annot"><span class="annottext">getColumnNamesSeq :: forall (proxy :: * -&gt; *). proxy (Table name) -&gt; Seq Text
+</span><a href="Database.Table.Schema.html#getColumnNamesSeq"><span class="hs-identifier hs-var hs-var hs-var">getColumnNamesSeq</span></a></span></span><span>  </span><span class="annot"><span class="annottext">proxy (Table name)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Seq Text
+forall a. Seq a
+</span><span class="hs-identifier hs-var">empty</span></span><span>
+</span><span id="line-128"></span><span>
+</span><span id="line-129"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679082466"><span id="local-6989586621679082467"><span id="local-6989586621679082468"><span class="hs-special">(</span><span class="annot"><a href="Database.Table.Schema.html#IsTable"><span class="hs-identifier hs-type">IsTable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082466"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">KnownSymbol</span></span><span> </span><span class="annot"><a href="#local-6989586621679082467"><span class="hs-identifier hs-type">name</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Database.Table.Schema.html#IsTable"><span class="hs-identifier hs-type">IsTable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679082466"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082467"><span class="hs-identifier hs-type">name</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082468"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-130"></span><span>    </span><span id="local-6989586621679082677"><span class="annot"><span class="annottext">getTableName :: forall (proxy :: * -&gt; *). proxy (t :. Col name a) -&gt; Text
+</span><a href="Database.Table.Schema.html#getTableName"><span class="hs-identifier hs-var hs-var hs-var">getTableName</span></a></span></span><span> </span><span class="annot"><span class="annottext">proxy (t :. Col name a)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Proxy t -&gt; Text
+forall t (proxy :: * -&gt; *). IsTable t =&gt; proxy t -&gt; Text
+forall (proxy :: * -&gt; *). proxy t -&gt; Text
+</span><a href="Database.Table.Schema.html#getTableName"><span class="hs-identifier hs-var">getTableName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy t
+forall {k} (t :: k). Proxy t
+</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679082466"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-131"></span><span>    </span><span id="local-6989586621679082680"><span class="annot"><span class="annottext">getColumnNamesSeq :: forall (proxy :: * -&gt; *). proxy (t :. Col name a) -&gt; Seq Text
+</span><a href="Database.Table.Schema.html#getColumnNamesSeq"><span class="hs-identifier hs-var hs-var hs-var">getColumnNamesSeq</span></a></span></span><span>  </span><span class="annot"><span class="annottext">proxy (t :. Col name a)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-132"></span><span>        </span><span class="annot"><span class="annottext">Proxy t -&gt; Seq Text
+forall t (proxy :: * -&gt; *). IsTable t =&gt; proxy t -&gt; Seq Text
+forall (proxy :: * -&gt; *). proxy t -&gt; Seq Text
+</span><a href="Database.Table.Schema.html#getColumnNamesSeq"><span class="hs-identifier hs-var">getColumnNamesSeq</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy t
+forall {k} (t :: k). Proxy t
+</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679082466"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-133"></span><span>        </span><span class="annot"><span class="annottext">Seq Text -&gt; Text -&gt; Seq Text
+forall a. Seq a -&gt; a -&gt; Seq a
+</span><span class="hs-operator hs-var">|&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
+</span><span class="hs-identifier hs-var">T.pack</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy name -&gt; String
+forall (n :: Symbol) (proxy :: Symbol -&gt; *).
+KnownSymbol n =&gt;
+proxy n -&gt; String
+</span><span class="hs-identifier hs-var">symbolVal</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy name
+forall {k} (t :: k). Proxy t
+</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679082467"><span class="hs-identifier hs-type">name</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-134"></span><span>
+</span><span id="line-135"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    Columns
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-138"></span><span class="hs-comment">-- | Type family</span><span>
+</span><span id="line-139"></span><span class="hs-comment">-- that maps a table schema @t@ (which ideally satisfies @IsTable t@)</span><span>
+</span><span id="line-140"></span><span class="hs-comment">-- to a type representing rows of that table.</span><span>
+</span><span id="line-141"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">family</span><span> </span><span id="Row"><span class="annot"><a href="Database.Table.Schema.html#Row"><span class="hs-identifier hs-var">Row</span></a></span></span><span> </span><span id="local-6989586621679082681"><span class="annot"><a href="#local-6989586621679082681"><span class="hs-identifier hs-type">t</span></a></span></span><span>
+</span><span id="line-142"></span><span>
+</span><span id="line-143"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="Row"><span class="annot"><a href="Database.Table.Schema.html#Row"><span class="hs-identifier hs-var">Row</span></a></span></span><span> </span><span id="local-6989586621679082682"><span id="local-6989586621679082683"><span id="local-6989586621679082684"><span class="hs-special">(</span><span class="annot"><a href="Database.Table.Schema.html#Table"><span class="hs-identifier hs-type">Table</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082682"><span class="hs-identifier hs-type">n0</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082683"><span class="hs-identifier hs-type">n1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082684"><span class="hs-identifier hs-type">a1</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-144"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Only</span></span><span> </span><span class="annot"><a href="#local-6989586621679082684"><span class="hs-identifier hs-type">a1</span></a></span><span>
+</span><span id="line-145"></span><span>
+</span><span id="line-146"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="Row"><span class="annot"><a href="Database.Table.Schema.html#Row"><span class="hs-identifier hs-var">Row</span></a></span></span><span> </span><span id="local-6989586621679082685"><span id="local-6989586621679082686"><span id="local-6989586621679082687"><span id="local-6989586621679082688"><span id="local-6989586621679082689"><span class="hs-special">(</span><span class="annot"><a href="Database.Table.Schema.html#Table"><span class="hs-identifier hs-type">Table</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082685"><span class="hs-identifier hs-type">n0</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082686"><span class="hs-identifier hs-type">n1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082687"><span class="hs-identifier hs-type">a1</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082688"><span class="hs-identifier hs-type">n2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082689"><span class="hs-identifier hs-type">a2</span></a></span><span class="hs-special">)</span></span></span></span></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-147"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679082687"><span class="hs-identifier hs-type">a1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679082689"><span class="hs-identifier hs-type">a2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-148"></span><span>
+</span><span id="line-149"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="Row"><span class="annot"><a href="Database.Table.Schema.html#Row"><span class="hs-identifier hs-var">Row</span></a></span></span><span> </span><span id="local-6989586621679082690"><span id="local-6989586621679082691"><span id="local-6989586621679082692"><span id="local-6989586621679082693"><span id="local-6989586621679082694"><span id="local-6989586621679082695"><span id="local-6989586621679082696"><span class="hs-special">(</span><span class="annot"><a href="Database.Table.Schema.html#Table"><span class="hs-identifier hs-type">Table</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082690"><span class="hs-identifier hs-type">n0</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082691"><span class="hs-identifier hs-type">n1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082692"><span class="hs-identifier hs-type">a1</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082693"><span class="hs-identifier hs-type">n2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082694"><span class="hs-identifier hs-type">a2</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082695"><span class="hs-identifier hs-type">n3</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082696"><span class="hs-identifier hs-type">a3</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-150"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679082692"><span class="hs-identifier hs-type">a1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679082694"><span class="hs-identifier hs-type">a2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679082696"><span class="hs-identifier hs-type">a3</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-151"></span><span>
+</span><span id="line-152"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span>
+</span><span id="line-153"></span><span>    </span><span id="Row"><span class="annot"><a href="Database.Table.Schema.html#Row"><span class="hs-identifier hs-var">Row</span></a></span></span><span> </span><span id="local-6989586621679082697"><span id="local-6989586621679082698"><span id="local-6989586621679082699"><span id="local-6989586621679082700"><span id="local-6989586621679082701"><span id="local-6989586621679082702"><span id="local-6989586621679082703"><span id="local-6989586621679082704"><span id="local-6989586621679082705"><span class="hs-special">(</span><span class="annot"><a href="Database.Table.Schema.html#Table"><span class="hs-identifier hs-type">Table</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082697"><span class="hs-identifier hs-type">n0</span></a></span><span>
+</span><span id="line-154"></span><span>            </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082698"><span class="hs-identifier hs-type">n1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082699"><span class="hs-identifier hs-type">a1</span></a></span><span>
+</span><span id="line-155"></span><span>            </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082700"><span class="hs-identifier hs-type">n2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082701"><span class="hs-identifier hs-type">a2</span></a></span><span>
+</span><span id="line-156"></span><span>            </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082702"><span class="hs-identifier hs-type">n3</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082703"><span class="hs-identifier hs-type">a3</span></a></span><span>
+</span><span id="line-157"></span><span>            </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082704"><span class="hs-identifier hs-type">n4</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082705"><span class="hs-identifier hs-type">a4</span></a></span><span>
+</span><span id="line-158"></span><span>        </span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-159"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679082699"><span class="hs-identifier hs-type">a1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679082701"><span class="hs-identifier hs-type">a2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679082703"><span class="hs-identifier hs-type">a3</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679082705"><span class="hs-identifier hs-type">a4</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-160"></span><span>
+</span><span id="line-161"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span>
+</span><span id="line-162"></span><span>    </span><span id="Row"><span class="annot"><a href="Database.Table.Schema.html#Row"><span class="hs-identifier hs-var">Row</span></a></span></span><span> </span><span id="local-6989586621679082706"><span id="local-6989586621679082707"><span id="local-6989586621679082708"><span id="local-6989586621679082709"><span id="local-6989586621679082710"><span id="local-6989586621679082711"><span id="local-6989586621679082712"><span id="local-6989586621679082713"><span id="local-6989586621679082714"><span id="local-6989586621679082715"><span id="local-6989586621679082716"><span class="hs-special">(</span><span class="annot"><a href="Database.Table.Schema.html#Table"><span class="hs-identifier hs-type">Table</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082706"><span class="hs-identifier hs-type">n0</span></a></span><span>
+</span><span id="line-163"></span><span>            </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082707"><span class="hs-identifier hs-type">n1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082708"><span class="hs-identifier hs-type">a1</span></a></span><span>
+</span><span id="line-164"></span><span>            </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082709"><span class="hs-identifier hs-type">n2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082710"><span class="hs-identifier hs-type">a2</span></a></span><span>
+</span><span id="line-165"></span><span>            </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082711"><span class="hs-identifier hs-type">n3</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082712"><span class="hs-identifier hs-type">a3</span></a></span><span>
+</span><span id="line-166"></span><span>            </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082713"><span class="hs-identifier hs-type">n4</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082714"><span class="hs-identifier hs-type">a4</span></a></span><span>
+</span><span id="line-167"></span><span>            </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082715"><span class="hs-identifier hs-type">n5</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082716"><span class="hs-identifier hs-type">a5</span></a></span><span>
+</span><span id="line-168"></span><span>        </span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-169"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679082708"><span class="hs-identifier hs-type">a1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679082710"><span class="hs-identifier hs-type">a2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679082712"><span class="hs-identifier hs-type">a3</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679082714"><span class="hs-identifier hs-type">a4</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679082716"><span class="hs-identifier hs-type">a5</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-170"></span><span>
+</span><span id="line-171"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span>
+</span><span id="line-172"></span><span>    </span><span id="Row"><span class="annot"><a href="Database.Table.Schema.html#Row"><span class="hs-identifier hs-var">Row</span></a></span></span><span> </span><span id="local-6989586621679082717"><span id="local-6989586621679082718"><span id="local-6989586621679082719"><span id="local-6989586621679082720"><span id="local-6989586621679082721"><span id="local-6989586621679082722"><span id="local-6989586621679082723"><span id="local-6989586621679082724"><span id="local-6989586621679082725"><span id="local-6989586621679082726"><span id="local-6989586621679082727"><span id="local-6989586621679082728"><span id="local-6989586621679082729"><span class="hs-special">(</span><span class="annot"><a href="Database.Table.Schema.html#Table"><span class="hs-identifier hs-type">Table</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082717"><span class="hs-identifier hs-type">n0</span></a></span><span>
+</span><span id="line-173"></span><span>            </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082718"><span class="hs-identifier hs-type">n1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082719"><span class="hs-identifier hs-type">a1</span></a></span><span>
+</span><span id="line-174"></span><span>            </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082720"><span class="hs-identifier hs-type">n2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082721"><span class="hs-identifier hs-type">a2</span></a></span><span>
+</span><span id="line-175"></span><span>            </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082722"><span class="hs-identifier hs-type">n3</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082723"><span class="hs-identifier hs-type">a3</span></a></span><span>
+</span><span id="line-176"></span><span>            </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082724"><span class="hs-identifier hs-type">n4</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082725"><span class="hs-identifier hs-type">a4</span></a></span><span>
+</span><span id="line-177"></span><span>            </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082726"><span class="hs-identifier hs-type">n5</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082727"><span class="hs-identifier hs-type">a5</span></a></span><span>
+</span><span id="line-178"></span><span>            </span><span class="annot"><a href="Database.Table.Schema.html#%3A."><span class="hs-operator hs-type">:.</span></a></span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082728"><span class="hs-identifier hs-type">n6</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679082729"><span class="hs-identifier hs-type">a6</span></a></span><span>
+</span><span id="line-179"></span><span>        </span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span></span></span></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-180"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679082719"><span class="hs-identifier hs-type">a1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679082721"><span class="hs-identifier hs-type">a2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679082723"><span class="hs-identifier hs-type">a3</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679082725"><span class="hs-identifier hs-type">a4</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679082727"><span class="hs-identifier hs-type">a5</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679082729"><span class="hs-identifier hs-type">a6</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-181"></span></pre></body></html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="annot"><span class="hs-comment">{- |
+Copyright: &#169; 2024 Cardano Foundation
+License: Apache-2.0
+
+SQL column types.
+-}</span></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Database.Table.SQL.Column.html"><span class="hs-identifier">Database.Table.SQL.Column</span></a></span><span>
+</span><span id="line-10"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Database.Table.SQL.Column.html#SqlType"><span class="hs-identifier">SqlType</span></a></span><span>
+</span><span id="line-11"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.SQL.Column.html#escapeSqlType"><span class="hs-identifier">escapeSqlType</span></a></span><span>
+</span><span id="line-12"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Database.Table.SQL.Column.html#IsColumnSql"><span class="hs-identifier">IsColumnSql</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Prelude</span></span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.ByteString</span></span><span>
+</span><span id="line-18"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">ByteString</span></span><span>
+</span><span id="line-19"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span>
+</span><span id="line-21"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Text</span></span><span>
+</span><span id="line-22"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Database.SQLite.Simple.FromField</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Sqlite</span></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Database.SQLite.Simple.ToField</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Sqlite</span></span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    Types for database columns
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-30"></span><span class="hs-comment">-- | SQL column types, including constraints.</span><span>
+</span><span id="line-31"></span><span class="hs-comment">--</span><span>
+</span><span id="line-32"></span><span class="hs-comment">-- Internally represented as a textual string. Examples:</span><span>
+</span><span id="line-33"></span><span class="hs-comment">--</span><span>
+</span><span id="line-34"></span><span class="hs-comment">-- &gt; INTEGER  PRIMARY KEY NOT NULL</span><span>
+</span><span id="line-35"></span><span class="hs-comment">-- &gt; TEXT     NOT NULL</span><span>
+</span><span id="line-36"></span><span class="hs-keyword">newtype</span><span> </span><span id="SqlType"><span class="annot"><a href="Database.Table.SQL.Column.html#SqlType"><span class="hs-identifier hs-var">SqlType</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="SqlType"><span class="annot"><a href="Database.Table.SQL.Column.html#SqlType"><span class="hs-identifier hs-var">SqlType</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-37"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679081448"><span id="local-6989586621679081453"><span class="annot"><span class="annottext">SqlType -&gt; SqlType -&gt; Bool
+(SqlType -&gt; SqlType -&gt; Bool)
+-&gt; (SqlType -&gt; SqlType -&gt; Bool) -&gt; Eq SqlType
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: SqlType -&gt; SqlType -&gt; Bool
+== :: SqlType -&gt; SqlType -&gt; Bool
+$c/= :: SqlType -&gt; SqlType -&gt; Bool
+/= :: SqlType -&gt; SqlType -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679081462"><span id="local-6989586621679081467"><span id="local-6989586621679081471"><span id="local-6989586621679081475"><span id="local-6989586621679081479"><span id="local-6989586621679081483"><span id="local-6989586621679081487"><span class="annot"><span class="annottext">Eq SqlType
+Eq SqlType =&gt;
+(SqlType -&gt; SqlType -&gt; Ordering)
+-&gt; (SqlType -&gt; SqlType -&gt; Bool)
+-&gt; (SqlType -&gt; SqlType -&gt; Bool)
+-&gt; (SqlType -&gt; SqlType -&gt; Bool)
+-&gt; (SqlType -&gt; SqlType -&gt; Bool)
+-&gt; (SqlType -&gt; SqlType -&gt; SqlType)
+-&gt; (SqlType -&gt; SqlType -&gt; SqlType)
+-&gt; Ord SqlType
+SqlType -&gt; SqlType -&gt; Bool
+SqlType -&gt; SqlType -&gt; Ordering
+SqlType -&gt; SqlType -&gt; SqlType
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: SqlType -&gt; SqlType -&gt; Ordering
+compare :: SqlType -&gt; SqlType -&gt; Ordering
+$c&lt; :: SqlType -&gt; SqlType -&gt; Bool
+&lt; :: SqlType -&gt; SqlType -&gt; Bool
+$c&lt;= :: SqlType -&gt; SqlType -&gt; Bool
+&lt;= :: SqlType -&gt; SqlType -&gt; Bool
+$c&gt; :: SqlType -&gt; SqlType -&gt; Bool
+&gt; :: SqlType -&gt; SqlType -&gt; Bool
+$c&gt;= :: SqlType -&gt; SqlType -&gt; Bool
+&gt;= :: SqlType -&gt; SqlType -&gt; Bool
+$cmax :: SqlType -&gt; SqlType -&gt; SqlType
+max :: SqlType -&gt; SqlType -&gt; SqlType
+$cmin :: SqlType -&gt; SqlType -&gt; SqlType
+min :: SqlType -&gt; SqlType -&gt; SqlType
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679081499"><span id="local-6989586621679081505"><span id="local-6989586621679081509"><span class="annot"><span class="annottext">Int -&gt; SqlType -&gt; ShowS
+[SqlType] -&gt; ShowS
+SqlType -&gt; String
+(Int -&gt; SqlType -&gt; ShowS)
+-&gt; (SqlType -&gt; String) -&gt; ([SqlType] -&gt; ShowS) -&gt; Show SqlType
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; SqlType -&gt; ShowS
+showsPrec :: Int -&gt; SqlType -&gt; ShowS
+$cshow :: SqlType -&gt; String
+show :: SqlType -&gt; String
+$cshowList :: [SqlType] -&gt; ShowS
+showList :: [SqlType] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="annot"><span class="hs-comment">-- | Print an 'SqlType' in SQL syntax.</span></span><span>
+</span><span id="line-40"></span><span class="annot"><a href="Database.Table.SQL.Column.html#escapeSqlType"><span class="hs-identifier hs-type">escapeSqlType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Column.html#SqlType"><span class="hs-identifier hs-type">SqlType</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-41"></span><span id="escapeSqlType"><span class="annot"><span class="annottext">escapeSqlType :: SqlType -&gt; Text
+</span><a href="Database.Table.SQL.Column.html#escapeSqlType"><span class="hs-identifier hs-var hs-var">escapeSqlType</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Column.html#SqlType"><span class="hs-identifier hs-type">SqlType</span></a></span><span> </span><span id="local-6989586621679081513"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679081513"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679081513"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-comment">-- | Class that maps a Haskell type to a column type of an SQL database.</span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- Also ensures that the types can be converted to each other</span><span>
+</span><span id="line-45"></span><span class="hs-comment">-- (via 'Sqlite.ToField' and 'Sqlite.FromField'</span><span>
+</span><span id="line-46"></span><span class="hs-comment">-- from &quot;Database.SQLite.Simple&quot;).</span><span>
+</span><span id="line-47"></span><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Sqlite.ToField</span></span><span> </span><span class="annot"><a href="#local-6989586621679081428"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sqlite.FromField</span></span><span> </span><span class="annot"><a href="#local-6989586621679081428"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="IsColumnSql"><span class="annot"><a href="Database.Table.SQL.Column.html#IsColumnSql"><span class="hs-identifier hs-var">IsColumnSql</span></a></span></span><span> </span><span id="local-6989586621679081428"><span class="annot"><a href="#local-6989586621679081428"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-48"></span><span>    </span><span id="getSqlType"><span class="annot"><a href="Database.Table.SQL.Column.html#getSqlType"><span class="hs-identifier hs-type">getSqlType</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span id="local-6989586621679081432"><span class="annot"><a href="#local-6989586621679081432"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679081428"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Column.html#SqlType"><span class="hs-identifier hs-type">SqlType</span></a></span></span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Database.Table.SQL.Column.html#IsColumnSql"><span class="hs-identifier hs-type">IsColumnSql</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-51"></span><span>    </span><span id="local-6989586621679081528"><span class="annot"><span class="annottext">getSqlType :: forall (proxy :: * -&gt; *). proxy Int -&gt; SqlType
+</span><a href="Database.Table.SQL.Column.html#getSqlType"><span class="hs-identifier hs-var hs-var hs-var">getSqlType</span></a></span></span><span> </span><span class="annot"><span class="annottext">proxy Int
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; SqlType
+</span><a href="Database.Table.SQL.Column.html#SqlType"><span class="hs-identifier hs-var">SqlType</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;INTEGER NOT NULL&quot;</span></span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Database.Table.SQL.Column.html#IsColumnSql"><span class="hs-identifier hs-type">IsColumnSql</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-54"></span><span>    </span><span id="local-6989586621679081540"><span class="annot"><span class="annottext">getSqlType :: forall (proxy :: * -&gt; *). proxy (Maybe Int) -&gt; SqlType
+</span><a href="Database.Table.SQL.Column.html#getSqlType"><span class="hs-identifier hs-var hs-var hs-var">getSqlType</span></a></span></span><span> </span><span class="annot"><span class="annottext">proxy (Maybe Int)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; SqlType
+</span><a href="Database.Table.SQL.Column.html#SqlType"><span class="hs-identifier hs-var">SqlType</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;INTEGER&quot;</span></span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Database.Table.SQL.Column.html#IsColumnSql"><span class="hs-identifier hs-type">IsColumnSql</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-57"></span><span>    </span><span id="local-6989586621679081550"><span class="annot"><span class="annottext">getSqlType :: forall (proxy :: * -&gt; *). proxy Text -&gt; SqlType
+</span><a href="Database.Table.SQL.Column.html#getSqlType"><span class="hs-identifier hs-var hs-var hs-var">getSqlType</span></a></span></span><span> </span><span class="annot"><span class="annottext">proxy Text
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; SqlType
+</span><a href="Database.Table.SQL.Column.html#SqlType"><span class="hs-identifier hs-var">SqlType</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;TEXT NOT NULL&quot;</span></span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Database.Table.SQL.Column.html#IsColumnSql"><span class="hs-identifier hs-type">IsColumnSql</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-60"></span><span>    </span><span id="local-6989586621679081560"><span class="annot"><span class="annottext">getSqlType :: forall (proxy :: * -&gt; *). proxy (Maybe Text) -&gt; SqlType
+</span><a href="Database.Table.SQL.Column.html#getSqlType"><span class="hs-identifier hs-var hs-var hs-var">getSqlType</span></a></span></span><span> </span><span class="annot"><span class="annottext">proxy (Maybe Text)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; SqlType
+</span><a href="Database.Table.SQL.Column.html#SqlType"><span class="hs-identifier hs-var">SqlType</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;TEXT&quot;</span></span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Database.Table.SQL.Column.html#IsColumnSql"><span class="hs-identifier hs-type">IsColumnSql</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-63"></span><span>    </span><span id="local-6989586621679081570"><span class="annot"><span class="annottext">getSqlType :: forall (proxy :: * -&gt; *). proxy String -&gt; SqlType
+</span><a href="Database.Table.SQL.Column.html#getSqlType"><span class="hs-identifier hs-var hs-var hs-var">getSqlType</span></a></span></span><span> </span><span class="annot"><span class="annottext">proxy String
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; SqlType
+</span><a href="Database.Table.SQL.Column.html#SqlType"><span class="hs-identifier hs-var">SqlType</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;TEXT NOT NULL&quot;</span></span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Database.Table.SQL.Column.html#IsColumnSql"><span class="hs-identifier hs-type">IsColumnSql</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-66"></span><span>    </span><span id="local-6989586621679081580"><span class="annot"><span class="annottext">getSqlType :: forall (proxy :: * -&gt; *). proxy (Maybe String) -&gt; SqlType
+</span><a href="Database.Table.SQL.Column.html#getSqlType"><span class="hs-identifier hs-var hs-var hs-var">getSqlType</span></a></span></span><span> </span><span class="annot"><span class="annottext">proxy (Maybe String)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; SqlType
+</span><a href="Database.Table.SQL.Column.html#SqlType"><span class="hs-identifier hs-var">SqlType</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;TEXT&quot;</span></span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Database.Table.SQL.Column.html#IsColumnSql"><span class="hs-identifier hs-type">IsColumnSql</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">ByteString</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-69"></span><span>    </span><span id="local-6989586621679081590"><span class="annot"><span class="annottext">getSqlType :: forall (proxy :: * -&gt; *). proxy ByteString -&gt; SqlType
+</span><a href="Database.Table.SQL.Column.html#getSqlType"><span class="hs-identifier hs-var hs-var hs-var">getSqlType</span></a></span></span><span> </span><span class="annot"><span class="annottext">proxy ByteString
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; SqlType
+</span><a href="Database.Table.SQL.Column.html#SqlType"><span class="hs-identifier hs-var">SqlType</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;BLOB NOT NULL&quot;</span></span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Database.Table.SQL.Column.html#IsColumnSql"><span class="hs-identifier hs-type">IsColumnSql</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">ByteString</span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-72"></span><span>    </span><span id="local-6989586621679081600"><span class="annot"><span class="annottext">getSqlType :: forall (proxy :: * -&gt; *). proxy (Maybe ByteString) -&gt; SqlType
+</span><a href="Database.Table.SQL.Column.html#getSqlType"><span class="hs-identifier hs-var hs-var hs-var">getSqlType</span></a></span></span><span> </span><span class="annot"><span class="annottext">proxy (Maybe ByteString)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; SqlType
+</span><a href="Database.Table.SQL.Column.html#SqlType"><span class="hs-identifier hs-var">SqlType</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;BLOB&quot;</span></span><span>
+</span><span id="line-73"></span></pre></body></html>
