@@ -15,6 +15,7 @@ This repository is structured as follows:
 * `lib/`
     * `delta-types/` — Basic concepts related to delta types.
     * `delta-store/` — Storing data on disk using delta types.
+    * `sqlite-table/` — Type-level SQL tables. 🚧 Add `Store` for DB tables.
 
 ## QuickStart
 
