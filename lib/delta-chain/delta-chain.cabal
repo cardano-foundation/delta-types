@@ -1,0 +1,74 @@
+cabal-version:   3.6
+name:            delta-chain
+version:         0.1.0.0
+synopsis:        Example: Storing a chain in a database, using delta types
+description:
+  EXPERIMENTAL.
+  .
+  Please see README.md.
+
+homepage:        https://github.com/cardano-foundation/delta-types
+license:         Apache-2.0
+license-file:    LICENSE
+author:          Cardano Foundation (High Assurance Lab)
+maintainer:      hal@cardanofoundation.org
+copyright:       2022-2023 IOHK, 2023-2025 Cardano Foundation
+category:        Database
+build-type:      Simple
+tested-with:     GHC ==8.10.7 || ==9.6.6 || ==9.10.1
+extra-doc-files: README.md
+
+common language
+  default-language:   Haskell2010
+  default-extensions:
+    NoImplicitPrelude
+    OverloadedStrings
+
+common opts-lib
+  ghc-options:
+    -Wall -Wcompat -Wredundant-constraints -Wincomplete-uni-patterns
+    -Wincomplete-record-updates
+
+  if flag(release)
+    ghc-options: -O2 -Werror
+
+common opts-exe
+  import:      opts-lib
+  ghc-options: -threaded -rtsopts
+
+flag release
+  description: Enable optimization and `-Werror`
+  default:     False
+  manual:      True
+
+library
+  import:          language, opts-lib
+  hs-source-dirs:  src
+  build-depends:
+    , base           >=4.14    && <5
+    , containers     >=0.5     && <0.8
+    , delta-store    >=1.0.0.0 && <1.1
+    , delta-types    >=1.0.0.0 && <1.1
+    , generic-lens   >=2.2.2.0 && <2.3
+    , io-classes     >=1.5.0.0 && <1.6
+    , semigroupoids  >=6.0.1   && <6.1
+    , sqlite-table   >=0.1.0.0 && <0.2
+    , text           >=1.2     && <2.2
+    , transformers   >=0.6.1.0 && <0.7
+
+  hs-source-dirs:  src
+  exposed-modules:
+    Data.Chain
+    Data.Table
+    Database.Table.Delta
+    Demo.Database
+
+test-suite unit
+  import:             language, opts-exe
+  type:               exitcode-stdio-1.0
+  hs-source-dirs:     test/unit
+  main-is:            Main.hs
+  build-tool-depends: hspec-discover:hspec-discover
+  build-depends:
+    , base
+    , hspec  >=2.11.0 && <2.12
