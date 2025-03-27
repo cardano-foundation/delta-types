@@ -1,0 +1,397 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE NamedFieldPuns #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE QuasiQuotes #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE RankNTypes #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE TypeOperators #-}</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-pragma">{-# LANGUAGE DataKinds #-}</span><span>
+</span><span id="line-11"></span><span class="hs-pragma">{-# LANGUAGE DeriveGeneric #-}</span><span>
+</span><span id="line-12"></span><span class="hs-pragma">{-# LANGUAGE DerivingStrategies #-}</span><span>
+</span><span id="line-13"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-14"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-15"></span><span class="hs-pragma">{-# LANGUAGE GADTs #-}</span><span>
+</span><span id="line-16"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-17"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-18"></span><span class="hs-pragma">{-# LANGUAGE StandaloneDeriving #-}</span><span>
+</span><span id="line-19"></span><span class="hs-pragma">{-# LANGUAGE UndecidableInstances #-}</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><span id="line-22"></span><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-missing-methods #-}</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Demo.Database.html"><span class="hs-identifier">Demo.Database</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Prelude</span></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Chain.html"><span class="hs-identifier">Data.Chain</span></a></span><span>
+</span><span id="line-29"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Chain.html#DeltaChain"><span class="hs-identifier">DeltaChain</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier">Edge</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#chainIntoTable"><span class="hs-identifier">chainIntoTable</span></a></span><span>
+</span><span id="line-32"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Generics.Internal.VL</span></span><span>
+</span><span id="line-34"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Iso'</span></span><span>
+</span><span id="line-35"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">iso</span></span><span>
+</span><span id="line-36"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">withIso</span></span><span>
+</span><span id="line-37"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Proxy</span></span><span>
+</span><span id="line-39"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Proxy</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Table.html"><span class="hs-identifier">Data.Table</span></a></span><span>
+</span><span id="line-42"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Table.html#DeltaDB"><span class="hs-identifier">DeltaDB</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Table.html#Pile"><span class="hs-identifier">Pile</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Table.html#tableIntoDatabase"><span class="hs-identifier">tableIntoDatabase</span></a></span><span>
+</span><span id="line-45"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span>
+</span><span id="line-47"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Text</span></span><span>
+</span><span id="line-48"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Database.Table.Delta.html"><span class="hs-identifier">Database.Table.Delta</span></a></span><span>
+</span><span id="line-50"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Database.Table.Delta.html#newSqlStore"><span class="hs-identifier">newSqlStore</span></a></span><span>
+</span><span id="line-51"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Database.Table.Schema</span></span><span>
+</span><span id="line-53"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Col</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">Row</span></span><span>
+</span><span id="line-55"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">Table</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(:.)</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Data.Chain.html"><span class="hs-identifier">Data.Chain</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Chain</span></span><span>
+</span><span id="line-60"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Database.Table.SQLite.Simple</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Sql</span></span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.DBVar</span></span><span>
+</span><span id="line-63"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Delta</span></span><span>
+</span><span id="line-64"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Store</span></span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    (Mock) address type
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-69"></span><span class="hs-keyword">type</span><span> </span><span id="Address"><span class="annot"><a href="Demo.Database.html#Address"><span class="hs-identifier hs-var">Address</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-70"></span><span class="hs-keyword">type</span><span> </span><span id="Node"><span class="annot"><a href="Demo.Database.html#Node"><span class="hs-identifier hs-var">Node</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span class="hs-keyword">data</span><span> </span><span id="AddressInPool"><span class="annot"><a href="Demo.Database.html#AddressInPool"><span class="hs-identifier hs-var">AddressInPool</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="AddressInPool"><span class="annot"><a href="Demo.Database.html#AddressInPool"><span class="hs-identifier hs-var">AddressInPool</span></a></span></span><span>
+</span><span id="line-73"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="address"><span class="annot"><span class="annottext">AddressInPool -&gt; Address
+</span><a href="Demo.Database.html#address"><span class="hs-identifier hs-var hs-var">address</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Demo.Database.html#Address"><span class="hs-identifier hs-type">Address</span></a></span><span>
+</span><span id="line-74"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="index"><span class="annot"><span class="annottext">AddressInPool -&gt; Primary
+</span><a href="Demo.Database.html#index"><span class="hs-identifier hs-var hs-var">index</span></a></span></span><span>   </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-75"></span><span>    </span><span class="hs-special">}</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679121309"><span id="local-6989586621679121315"><span class="annot"><span class="annottext">AddressInPool -&gt; AddressInPool -&gt; Bool
+(AddressInPool -&gt; AddressInPool -&gt; Bool)
+-&gt; (AddressInPool -&gt; AddressInPool -&gt; Bool) -&gt; Eq AddressInPool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: AddressInPool -&gt; AddressInPool -&gt; Bool
+== :: AddressInPool -&gt; AddressInPool -&gt; Bool
+$c/= :: AddressInPool -&gt; AddressInPool -&gt; Bool
+/= :: AddressInPool -&gt; AddressInPool -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679121322"><span id="local-6989586621679121327"><span id="local-6989586621679121331"><span id="local-6989586621679121335"><span id="local-6989586621679121338"><span id="local-6989586621679121341"><span id="local-6989586621679121344"><span class="annot"><span class="annottext">Eq AddressInPool
+Eq AddressInPool =&gt;
+(AddressInPool -&gt; AddressInPool -&gt; Ordering)
+-&gt; (AddressInPool -&gt; AddressInPool -&gt; Bool)
+-&gt; (AddressInPool -&gt; AddressInPool -&gt; Bool)
+-&gt; (AddressInPool -&gt; AddressInPool -&gt; Bool)
+-&gt; (AddressInPool -&gt; AddressInPool -&gt; Bool)
+-&gt; (AddressInPool -&gt; AddressInPool -&gt; AddressInPool)
+-&gt; (AddressInPool -&gt; AddressInPool -&gt; AddressInPool)
+-&gt; Ord AddressInPool
+AddressInPool -&gt; AddressInPool -&gt; Bool
+AddressInPool -&gt; AddressInPool -&gt; Ordering
+AddressInPool -&gt; AddressInPool -&gt; AddressInPool
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: AddressInPool -&gt; AddressInPool -&gt; Ordering
+compare :: AddressInPool -&gt; AddressInPool -&gt; Ordering
+$c&lt; :: AddressInPool -&gt; AddressInPool -&gt; Bool
+&lt; :: AddressInPool -&gt; AddressInPool -&gt; Bool
+$c&lt;= :: AddressInPool -&gt; AddressInPool -&gt; Bool
+&lt;= :: AddressInPool -&gt; AddressInPool -&gt; Bool
+$c&gt; :: AddressInPool -&gt; AddressInPool -&gt; Bool
+&gt; :: AddressInPool -&gt; AddressInPool -&gt; Bool
+$c&gt;= :: AddressInPool -&gt; AddressInPool -&gt; Bool
+&gt;= :: AddressInPool -&gt; AddressInPool -&gt; Bool
+$cmax :: AddressInPool -&gt; AddressInPool -&gt; AddressInPool
+max :: AddressInPool -&gt; AddressInPool -&gt; AddressInPool
+$cmin :: AddressInPool -&gt; AddressInPool -&gt; AddressInPool
+min :: AddressInPool -&gt; AddressInPool -&gt; AddressInPool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679121352"><span id="local-6989586621679121357"><span id="local-6989586621679121360"><span class="annot"><span class="annottext">Primary -&gt; AddressInPool -&gt; ShowS
+[AddressInPool] -&gt; ShowS
+AddressInPool -&gt; String
+(Primary -&gt; AddressInPool -&gt; ShowS)
+-&gt; (AddressInPool -&gt; String)
+-&gt; ([AddressInPool] -&gt; ShowS)
+-&gt; Show AddressInPool
+forall a.
+(Primary -&gt; a -&gt; ShowS)
+-&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Primary -&gt; AddressInPool -&gt; ShowS
+showsPrec :: Primary -&gt; AddressInPool -&gt; ShowS
+$cshow :: AddressInPool -&gt; String
+show :: AddressInPool -&gt; String
+$cshowList :: [AddressInPool] -&gt; ShowS
+showList :: [AddressInPool] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-76"></span><span>
+</span><span id="line-77"></span><span class="annot"><span class="hs-comment">-- | Construnct an 'Embedding' of delta encodings from an isomorphism.</span></span><span>
+</span><span id="line-78"></span><span id="local-6989586621679121066"><span id="local-6989586621679121067"><span class="annot"><a href="Demo.Database.html#embedIso"><span class="hs-identifier hs-type">embedIso</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Iso'</span></span><span> </span><span class="annot"><a href="#local-6989586621679121066"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679121067"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Embedding</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Data.Table.html#DeltaDB"><span class="hs-identifier hs-type">DeltaDB</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><a href="#local-6989586621679121066"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Data.Table.html#DeltaDB"><span class="hs-identifier hs-type">DeltaDB</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><a href="#local-6989586621679121067"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-79"></span><span id="embedIso"><span class="annot"><span class="annottext">embedIso :: forall a b.
+Iso' a b -&gt; Embedding [DeltaDB Primary a] [DeltaDB Primary b]
+</span><a href="Demo.Database.html#embedIso"><span class="hs-identifier hs-var hs-var">embedIso</span></a></span></span><span> </span><span id="local-6989586621679121384"><span class="annot"><span class="annottext">Iso' a b
+</span><a href="#local-6989586621679121384"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Iso' a b
+-&gt; ((a -&gt; b)
+    -&gt; (b -&gt; a) -&gt; Embedding [DeltaDB Primary a] [DeltaDB Primary b])
+-&gt; Embedding [DeltaDB Primary a] [DeltaDB Primary b]
+forall s t a b r. Iso s t a b -&gt; ((s -&gt; a) -&gt; (b -&gt; t) -&gt; r) -&gt; r
+</span><span class="hs-identifier hs-var">withIso</span></span><span> </span><span class="annot"><span class="annottext">p b (f b) -&gt; p a (f a)
+Iso' a b
+</span><a href="#local-6989586621679121384"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">(((a -&gt; b)
+  -&gt; (b -&gt; a) -&gt; Embedding [DeltaDB Primary a] [DeltaDB Primary b])
+ -&gt; Embedding [DeltaDB Primary a] [DeltaDB Primary b])
+-&gt; ((a -&gt; b)
+    -&gt; (b -&gt; a) -&gt; Embedding [DeltaDB Primary a] [DeltaDB Primary b])
+-&gt; Embedding [DeltaDB Primary a] [DeltaDB Primary b]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679121389"><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621679121389"><span class="hs-identifier hs-var">ab</span></a></span></span><span> </span><span id="local-6989586621679121390"><span class="annot"><span class="annottext">b -&gt; a
+</span><a href="#local-6989586621679121390"><span class="hs-identifier hs-var">ba</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Embedding' [DeltaDB Primary a] [DeltaDB Primary b]
+-&gt; Embedding [DeltaDB Primary a] [DeltaDB Primary b]
+forall da db. Embedding' da db -&gt; Embedding da db
+</span><span class="hs-identifier hs-var">mkEmbedding</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Embedding'</span></span><span>
+</span><span id="line-80"></span><span>    </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">load :: Table b -&gt; Either SomeException (Table a)
+</span><span class="hs-identifier hs-var">load</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Table a -&gt; Either SomeException (Table a)
+forall a b. b -&gt; Either a b
+</span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="annot"><span class="annottext">(Table a -&gt; Either SomeException (Table a))
+-&gt; (Table b -&gt; Table a)
+-&gt; Table b
+-&gt; Either SomeException (Table a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(b -&gt; a) -&gt; Table b -&gt; Table a
+forall a b. (a -&gt; b) -&gt; Table a -&gt; Table b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">b -&gt; a
+</span><a href="#local-6989586621679121390"><span class="hs-identifier hs-var">ba</span></a></span><span>
+</span><span id="line-81"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">write :: Table a -&gt; Table b
+</span><span class="hs-identifier hs-var">write</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; b) -&gt; Table a -&gt; Table b
+forall a b. (a -&gt; b) -&gt; Table a -&gt; Table b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621679121389"><span class="hs-identifier hs-var">ab</span></a></span><span>
+</span><span id="line-82"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">update :: Table a -&gt; Table b -&gt; [DeltaDB Primary a] -&gt; [DeltaDB Primary b]
+</span><span class="hs-identifier hs-var">update</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Table a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Table b
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(DeltaDB Primary a -&gt; DeltaDB Primary b)
+-&gt; [DeltaDB Primary a] -&gt; [DeltaDB Primary b]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(a -&gt; b) -&gt; DeltaDB Primary a -&gt; DeltaDB Primary b
+forall a b. (a -&gt; b) -&gt; DeltaDB Primary a -&gt; DeltaDB Primary b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621679121389"><span class="hs-identifier hs-var">ab</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-83"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span class="hs-keyword">type</span><span> </span><span id="StoreAddress"><span class="annot"><a href="Demo.Database.html#StoreAddress"><span class="hs-identifier hs-var">StoreAddress</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UpdateStore</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#DeltaChain"><span class="hs-identifier hs-type">DeltaChain</span></a></span><span> </span><span class="annot"><a href="Demo.Database.html#Node"><span class="hs-identifier hs-type">Node</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Demo.Database.html#AddressInPool"><span class="hs-identifier hs-type">AddressInPool</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-86"></span><span>
+</span><span id="line-87"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    Store using SQL row types
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="hs-keyword">type</span><span> </span><span id="Primary"><span class="annot"><a href="Demo.Database.html#Primary"><span class="hs-identifier hs-var">Primary</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span class="annot"><a href="Demo.Database.html#newStoreAddressSql"><span class="hs-identifier hs-type">newStoreAddressSql</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sql.Connection</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="Demo.Database.html#StoreAddress"><span class="hs-identifier hs-type">StoreAddress</span></a></span><span>
+</span><span id="line-94"></span><span id="newStoreAddressSql"><span class="annot"><span class="annottext">newStoreAddressSql :: Connection -&gt; IO StoreAddress
+</span><a href="Demo.Database.html#newStoreAddressSql"><span class="hs-identifier hs-var hs-var">newStoreAddressSql</span></a></span></span><span> </span><span id="local-6989586621679121398"><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679121398"><span class="hs-identifier hs-var">conn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-95"></span><span>    </span><span class="annot"><span class="annottext">(SqlM () -&gt; Connection -&gt; IO ()) -&gt; Connection -&gt; SqlM () -&gt; IO ()
+forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
+</span><span class="hs-identifier hs-var">flip</span></span><span> </span><span class="annot"><span class="annottext">SqlM () -&gt; Connection -&gt; IO ()
+forall a. SqlM a -&gt; Connection -&gt; IO a
+</span><span class="hs-identifier hs-var">Sql.runSqlM</span></span><span> </span><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679121398"><span class="hs-identifier hs-var">conn</span></a></span><span> </span><span class="annot"><span class="annottext">(SqlM () -&gt; IO ()) -&gt; SqlM () -&gt; IO ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-96"></span><span>        </span><span class="annot"><span class="annottext">Proxy (TableAddress :. Col &quot;id&quot; Primary) -&gt; SqlM ()
+forall t (proxy :: * -&gt; *). IsTableSql t =&gt; proxy t -&gt; SqlM ()
+</span><span class="hs-identifier hs-var">Sql.createTable</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy (TableAddress :. Col &quot;id&quot; Primary)
+forall {k} (t :: k). Proxy t
+</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Demo.Database.html#TableAddress"><span class="hs-identifier hs-type">TableAddress</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><span class="hs-string">&quot;id&quot;</span></span><span> </span><span class="annot"><a href="Demo.Database.html#Primary"><span class="hs-identifier hs-type">Primary</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-97"></span><span>    </span><span id="local-6989586621679121403"><span class="annot"><a href="#local-6989586621679121403"><span class="hs-identifier hs-var">store0</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Proxy TableAddress
+-&gt; Connection
+-&gt; IO (UpdateStore IO [DeltaDB Primary (Row TableAddress)])
+forall table.
+(AppendPrimaryKey table, IsTableSql (table :. Col &quot;id&quot; Primary),
+ Show (Row table)) =&gt;
+Proxy table
+-&gt; Connection -&gt; IO (UpdateStore IO [DeltaDB Primary (Row table)])
+</span><a href="Database.Table.Delta.html#newSqlStore"><span class="hs-identifier hs-var">newSqlStore</span></a></span><span> </span><span class="annot"><span class="annottext">Proxy TableAddress
+</span><a href="Demo.Database.html#proxyTableAddress"><span class="hs-identifier hs-var">proxyTableAddress</span></a></span><span> </span><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679121398"><span class="hs-identifier hs-var">conn</span></a></span><span>
+</span><span id="line-98"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">embedStore</span></span><span> </span><span class="annot"><a href="#local-6989586621679121406"><span class="hs-identifier hs-type">embed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679121403"><span class="hs-identifier hs-type">store0</span></a></span><span>
+</span><span id="line-99"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-100"></span><span>    </span><span id="local-6989586621679121406"><span class="annot"><span class="annottext">embed :: Embedding
+  (DeltaChain Primary [AddressInPool])
+  [DeltaDB Primary (Primary, Primary, Address, Primary)]
+</span><a href="#local-6989586621679121406"><span class="hs-identifier hs-var hs-var">embed</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Iso'
+  (Edge Primary AddressInPool) (Primary, Primary, Address, Primary)
+-&gt; Embedding
+     [DeltaDB Primary (Edge Primary AddressInPool)]
+     [DeltaDB Primary (Primary, Primary, Address, Primary)]
+forall a b.
+Iso' a b -&gt; Embedding [DeltaDB Primary a] [DeltaDB Primary b]
+</span><a href="Demo.Database.html#embedIso"><span class="hs-identifier hs-var">embedIso</span></a></span><span> </span><span class="annot"><span class="annottext">p (Primary, Primary, Address, Primary)
+  (f (Primary, Primary, Address, Primary))
+-&gt; p (Edge Primary AddressInPool) (f (Edge Primary AddressInPool))
+p (Row TableAddress) (f (Row TableAddress))
+-&gt; p (Edge Primary AddressInPool) (f (Edge Primary AddressInPool))
+Iso'
+  (Edge Primary AddressInPool) (Primary, Primary, Address, Primary)
+Iso' (Edge Primary AddressInPool) (Row TableAddress)
+</span><a href="Demo.Database.html#addressSqlIso"><span class="hs-identifier hs-var">addressSqlIso</span></a></span><span>
+</span><span id="line-101"></span><span>        </span><span class="annot"><span class="annottext">Embedding
+  [DeltaDB Primary (Edge Primary AddressInPool)]
+  [DeltaDB Primary (Primary, Primary, Address, Primary)]
+-&gt; Embedding
+     (DeltaChain Primary [AddressInPool])
+     [DeltaDB Primary (Edge Primary AddressInPool)]
+-&gt; Embedding
+     (DeltaChain Primary [AddressInPool])
+     [DeltaDB Primary (Primary, Primary, Address, Primary)]
+forall j k1 i. Embedding j k1 -&gt; Embedding i j -&gt; Embedding i k1
+forall {k} (c :: k -&gt; k -&gt; *) (j :: k) (k1 :: k) (i :: k).
+Semigroupoid c =&gt;
+c j k1 -&gt; c i j -&gt; c i k1
+</span><span class="hs-operator hs-var">`o`</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Embedding
+  [DeltaTable (Edge Primary AddressInPool)]
+  [DeltaDB Primary (Edge Primary AddressInPool)]
+forall row. Embedding [DeltaTable row] [DeltaDB Primary row]
+</span><a href="Data.Table.html#tableIntoDatabase"><span class="hs-identifier hs-var">tableIntoDatabase</span></a></span><span> </span><span class="annot"><span class="annottext">Embedding
+  [DeltaTable (Edge Primary AddressInPool)]
+  [DeltaDB Primary (Edge Primary AddressInPool)]
+-&gt; Embedding
+     (DeltaChain Primary [AddressInPool])
+     [DeltaTable (Edge Primary AddressInPool)]
+-&gt; Embedding
+     (DeltaChain Primary [AddressInPool])
+     [DeltaDB Primary (Edge Primary AddressInPool)]
+forall j k1 i. Embedding j k1 -&gt; Embedding i j -&gt; Embedding i k1
+forall {k} (c :: k -&gt; k -&gt; *) (j :: k) (k1 :: k) (i :: k).
+Semigroupoid c =&gt;
+c j k1 -&gt; c i j -&gt; c i k1
+</span><span class="hs-operator hs-var">`o`</span></span><span> </span><span class="annot"><span class="annottext">([AddressInPool] -&gt; Pile AddressInPool)
+-&gt; (Pile AddressInPool -&gt; [AddressInPool])
+-&gt; Embedding
+     (DeltaChain Primary [AddressInPool])
+     [DeltaTable (Edge Primary AddressInPool)]
+forall node edge e.
+(Ord node, Semigroup edge) =&gt;
+(edge -&gt; Pile e)
+-&gt; (Pile e -&gt; edge)
+-&gt; Embedding (DeltaChain node edge) [DeltaTable (Edge node e)]
+</span><a href="Data.Chain.html#chainIntoTable"><span class="hs-identifier hs-var">chainIntoTable</span></a></span><span> </span><span class="annot"><span class="annottext">[AddressInPool] -&gt; Pile AddressInPool
+forall a. [a] -&gt; Pile a
+</span><a href="Data.Table.html#Pile"><span class="hs-identifier hs-var">Pile</span></a></span><span> </span><span class="annot"><span class="annottext">Pile AddressInPool -&gt; [AddressInPool]
+forall a. Pile a -&gt; [a]
+</span><a href="Data.Table.html#getPile"><span class="hs-identifier hs-var">getPile</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span class="annot"><a href="Demo.Database.html#addressSqlIso"><span class="hs-identifier hs-type">addressSqlIso</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Iso'</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span> </span><span class="annot"><a href="Demo.Database.html#Node"><span class="hs-identifier hs-type">Node</span></a></span><span> </span><span class="annot"><a href="Demo.Database.html#AddressInPool"><span class="hs-identifier hs-type">AddressInPool</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Row</span></span><span> </span><span class="annot"><a href="Demo.Database.html#TableAddress"><span class="hs-identifier hs-type">TableAddress</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-104"></span><span id="addressSqlIso"><span class="annot"><span class="annottext">addressSqlIso :: Iso' (Edge Primary AddressInPool) (Row TableAddress)
+</span><a href="Demo.Database.html#addressSqlIso"><span class="hs-identifier hs-var hs-var">addressSqlIso</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Edge Primary AddressInPool
+ -&gt; (Primary, Primary, Address, Primary))
+-&gt; ((Primary, Primary, Address, Primary)
+    -&gt; Edge Primary AddressInPool)
+-&gt; Iso'
+     (Edge Primary AddressInPool) (Primary, Primary, Address, Primary)
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="annot"><span class="annottext">Edge Primary AddressInPool -&gt; (Primary, Primary, Address, Primary)
+forall {b}. Edge b AddressInPool -&gt; (b, b, Address, Primary)
+</span><a href="#local-6989586621679121424"><span class="hs-identifier hs-var">ab</span></a></span><span> </span><span class="annot"><span class="annottext">(Primary, Primary, Address, Primary) -&gt; Edge Primary AddressInPool
+forall {node}.
+(node, node, Address, Primary) -&gt; Edge node AddressInPool
+</span><a href="#local-6989586621679121425"><span class="hs-identifier hs-var">ba</span></a></span><span>
+</span><span id="line-105"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-106"></span><span>    </span><span id="local-6989586621679121424"><span class="annot"><span class="annottext">ab :: Edge b AddressInPool -&gt; (b, b, Address, Primary)
+</span><a href="#local-6989586621679121424"><span class="hs-identifier hs-var hs-var">ab</span></a></span></span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span id="local-6989586621679121427"><span class="annot"><span class="annottext">b
+from :: b
+from :: forall node edge. Edge node edge -&gt; node
+</span><a href="#local-6989586621679121427"><span class="hs-identifier hs-var hs-var">from</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679121429"><span class="annot"><span class="annottext">b
+to :: b
+to :: forall node edge. Edge node edge -&gt; node
+</span><a href="#local-6989586621679121429"><span class="hs-identifier hs-var hs-var">to</span></a></span></span><span class="hs-special">,</span><span class="annot"><span class="annottext">via :: forall node edge. Edge node edge -&gt; edge
+</span><a href="Data.Chain.html#via"><span class="hs-keyword hs-var">via</span></a></span><span class="hs-glyph">=</span><span class="annot"><a href="Demo.Database.html#AddressInPool"><span class="hs-identifier hs-type">AddressInPool</span></a></span><span class="hs-special">{</span><span id="local-6989586621679121432"><span class="annot"><span class="annottext">Address
+address :: AddressInPool -&gt; Address
+address :: Address
+</span><a href="Demo.Database.html#address"><span class="hs-identifier hs-var hs-var">address</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679121433"><span class="annot"><span class="annottext">Primary
+index :: AddressInPool -&gt; Primary
+index :: Primary
+</span><a href="Demo.Database.html#index"><span class="hs-identifier hs-var hs-var">index</span></a></span></span><span class="hs-special">}</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-107"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679121427"><span class="hs-identifier hs-var">from</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679121429"><span class="hs-identifier hs-var">to</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Address
+</span><a href="#local-6989586621679121432"><span class="hs-identifier hs-var">address</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679121433"><span class="hs-identifier hs-var">index</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-108"></span><span>    </span><span id="local-6989586621679121425"><span class="annot"><span class="annottext">ba :: (node, node, Address, Primary) -&gt; Edge node AddressInPool
+</span><a href="#local-6989586621679121425"><span class="hs-identifier hs-var hs-var">ba</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679121434"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679121434"><span class="hs-identifier hs-var">from</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679121435"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679121435"><span class="hs-identifier hs-var">to</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679121436"><span class="annot"><span class="annottext">Address
+</span><a href="#local-6989586621679121436"><span class="hs-identifier hs-var">address</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679121437"><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679121437"><span class="hs-identifier hs-var">index</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-109"></span><span>        </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">node
+from :: node
+from :: node
+</span><a href="Data.Chain.html#from"><span class="hs-identifier hs-var hs-var">from</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">node
+to :: node
+to :: node
+</span><a href="Data.Chain.html#to"><span class="hs-identifier hs-var hs-var">to</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">via :: AddressInPool
+</span><a href="Data.Chain.html#via"><span class="hs-keyword hs-var">via</span></a></span><span class="hs-glyph">=</span><span class="annot"><a href="Demo.Database.html#AddressInPool"><span class="hs-identifier hs-type">AddressInPool</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">Address
+address :: Address
+address :: Address
+</span><a href="Demo.Database.html#address"><span class="hs-identifier hs-var hs-var">address</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">Primary
+index :: Primary
+index :: Primary
+</span><a href="Demo.Database.html#index"><span class="hs-identifier hs-var hs-var">index</span></a></span><span class="hs-special">}</span><span class="hs-special">}</span><span>
+</span><span id="line-110"></span><span>
+</span><span id="line-111"></span><span class="hs-keyword">type</span><span> </span><span id="TableAddress"><span class="annot"><a href="Demo.Database.html#TableAddress"><span class="hs-identifier hs-var">TableAddress</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-112"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Table</span></span><span> </span><span class="annot"><span class="hs-string">&quot;addresses&quot;</span></span><span>
+</span><span id="line-113"></span><span>        </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><span class="hs-string">&quot;from&quot;</span></span><span> </span><span class="annot"><a href="Demo.Database.html#Node"><span class="hs-identifier hs-type">Node</span></a></span><span>
+</span><span id="line-114"></span><span>        </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><span class="hs-string">&quot;to&quot;</span></span><span> </span><span class="annot"><a href="Demo.Database.html#Node"><span class="hs-identifier hs-type">Node</span></a></span><span>
+</span><span id="line-115"></span><span>        </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><span class="hs-string">&quot;address&quot;</span></span><span> </span><span class="annot"><a href="Demo.Database.html#Address"><span class="hs-identifier hs-type">Address</span></a></span><span>
+</span><span id="line-116"></span><span>        </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><span class="hs-string">&quot;address_ix&quot;</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-117"></span><span>
+</span><span id="line-118"></span><span class="annot"><a href="Demo.Database.html#proxyTableAddress"><span class="hs-identifier hs-type">proxyTableAddress</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="Demo.Database.html#TableAddress"><span class="hs-identifier hs-type">TableAddress</span></a></span><span>
+</span><span id="line-119"></span><span id="proxyTableAddress"><span class="annot"><span class="annottext">proxyTableAddress :: Proxy TableAddress
+</span><a href="Demo.Database.html#proxyTableAddress"><span class="hs-identifier hs-var hs-var">proxyTableAddress</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Proxy TableAddress
+forall {k} (t :: k). Proxy t
+</span><span class="hs-identifier hs-var">Proxy</span></span><span>
+</span><span id="line-120"></span><span>
+</span><span id="line-121"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    Database connection
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-124"></span><span class="annot"><a href="Demo.Database.html#main"><span class="hs-identifier hs-type">main</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-125"></span><span id="main"><span class="annot"><span class="annottext">main :: IO ()
+</span><a href="Demo.Database.html#main"><span class="hs-identifier hs-var hs-var">main</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; (Connection -&gt; IO ()) -&gt; IO ()
+forall a. String -&gt; (Connection -&gt; IO a) -&gt; IO a
+</span><span class="hs-identifier hs-var">Sql.withConnection</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;:memory:&quot;</span></span><span> </span><span class="annot"><span class="annottext">((Connection -&gt; IO ()) -&gt; IO ()) -&gt; (Connection -&gt; IO ()) -&gt; IO ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679121440"><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679121440"><span class="hs-identifier hs-var">conn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-126"></span><span>    </span><span id="local-6989586621679121441"><span class="annot"><a href="#local-6989586621679121441"><span class="hs-identifier hs-var">store</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Connection -&gt; IO StoreAddress
+</span><a href="Demo.Database.html#newStoreAddressSql"><span class="hs-identifier hs-var">newStoreAddressSql</span></a></span><span> </span><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679121440"><span class="hs-identifier hs-var">conn</span></a></span><span>
+</span><span id="line-127"></span><span>    </span><span id="local-6989586621679121442"><span class="annot"><a href="#local-6989586621679121442"><span class="hs-identifier hs-var">db</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="hs-identifier hs-type">initDBVar</span></span><span> </span><span class="annot"><a href="#local-6989586621679121441"><span class="hs-identifier hs-type">store</span></a></span><span>
+</span><span id="line-128"></span><span>        </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Data.Chain.html#fromEdge"><span class="hs-identifier hs-type">Chain.fromEdge</span></a></span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span class="annot"><a href="Data.Chain.html#from"><span class="hs-identifier hs-var">from</span></a></span><span class="hs-glyph">=</span><span class="annot"><span class="hs-number">0</span></span><span class="hs-special">,</span><span class="annot"><a href="Data.Chain.html#to"><span class="hs-identifier hs-var">to</span></a></span><span class="hs-glyph">=</span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">,</span><span class="annot"><a href="Data.Chain.html#via"><span class="hs-keyword hs-var">via</span></a></span><span class="hs-glyph">=</span><span class="hs-special">[</span><span class="annot"><a href="Demo.Database.html#AddressInPool"><span class="hs-identifier hs-type">AddressInPool</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;a&quot;</span></span><span> </span><span class="annot"><span class="hs-number">31</span></span><span class="hs-special">]</span><span class="hs-special">}</span><span>
+</span><span id="line-129"></span><span>
+</span><span id="line-130"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">updateDBVar</span></span><span> </span><span class="annot"><a href="#local-6989586621679121442"><span class="hs-identifier hs-type">db</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Data.Chain.html#AppendTip"><span class="hs-identifier hs-type">Chain.AppendTip</span></a></span><span> </span><span class="annot"><span class="hs-number">2</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Demo.Database.html#AddressInPool"><span class="hs-identifier hs-type">AddressInPool</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;b&quot;</span></span><span> </span><span class="annot"><span class="hs-number">32</span></span><span class="hs-special">]</span><span>
+</span><span id="line-131"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">updateDBVar</span></span><span> </span><span class="annot"><a href="#local-6989586621679121442"><span class="hs-identifier hs-type">db</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Data.Chain.html#AppendTip"><span class="hs-identifier hs-type">Chain.AppendTip</span></a></span><span> </span><span class="annot"><span class="hs-number">3</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Demo.Database.html#AddressInPool"><span class="hs-identifier hs-type">AddressInPool</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;c&quot;</span></span><span> </span><span class="annot"><span class="hs-number">33</span></span><span class="hs-special">]</span><span>
+</span><span id="line-132"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">updateDBVar</span></span><span> </span><span class="annot"><a href="#local-6989586621679121442"><span class="hs-identifier hs-type">db</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Data.Chain.html#CollapseNode"><span class="hs-identifier hs-type">Chain.CollapseNode</span></a></span><span> </span><span class="annot"><span class="hs-number">2</span></span><span>
+</span><span id="line-133"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">updateDBVar</span></span><span> </span><span class="annot"><a href="#local-6989586621679121442"><span class="hs-identifier hs-type">db</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Data.Chain.html#CollapseNode"><span class="hs-identifier hs-type">Chain.CollapseNode</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span>
+</span><span id="line-134"></span><span>
+</span><span id="line-135"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">print</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">=&lt;&lt;</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">readDBVar</span></span><span> </span><span class="annot"><a href="#local-6989586621679121442"><span class="hs-identifier hs-type">db</span></a></span><span>
+</span><span id="line-136"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">print</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">=&lt;&lt;</span></span><span> </span><span class="annot"><span class="hs-identifier hs-var">loadS</span></span><span> </span><span class="annot"><a href="#local-6989586621679121441"><span class="hs-identifier hs-type">store</span></a></span><span>
+</span><span id="line-137"></span><span>    </span><span class="hs-comment">-- FIXME: Results differ, something is wrong.</span><span>
+</span><span id="line-138"></span></pre></body></html>

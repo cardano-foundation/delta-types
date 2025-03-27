@@ -1,0 +1,1310 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE NamedFieldPuns #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Data.Chain.html"><span class="hs-identifier">Data.Chain</span></a></span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-4"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Synopsis</span></span><span>
+</span><span id="line-5"></span><span>    </span><span class="hs-comment">-- | 'Chain'@ node edge@ is a linear chain of nodes with directed</span><span>
+</span><span id="line-6"></span><span>    </span><span class="hs-comment">-- edges.</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Chain</span></span><span>
+</span><span id="line-9"></span><span>      </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier">Chain</span></a></span><span>
+</span><span id="line-10"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#member"><span class="hs-identifier">member</span></a></span><span>
+</span><span id="line-11"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#ChainContext"><span class="hs-identifier">ChainContext</span></a></span><span>
+</span><span id="line-12"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#lookup"><span class="hs-identifier">lookup</span></a></span><span>
+</span><span id="line-13"></span><span>    </span><span class="hs-comment">--, singleton</span><span>
+</span><span id="line-14"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#fromEdge"><span class="hs-identifier">fromEdge</span></a></span><span>
+</span><span id="line-15"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#fromEdges"><span class="hs-identifier">fromEdges</span></a></span><span>
+</span><span id="line-16"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#edges"><span class="hs-identifier">edges</span></a></span><span>
+</span><span id="line-17"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#nodes"><span class="hs-identifier">nodes</span></a></span><span>
+</span><span id="line-18"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#toEdges"><span class="hs-identifier">toEdges</span></a></span><span>
+</span><span id="line-19"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#summary"><span class="hs-identifier">summary</span></a></span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><span class="hs-comment">-- * DeltaChain</span></span><span>
+</span><span id="line-22"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#DeltaChain"><span class="hs-identifier">DeltaChain</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#appendTip"><span class="hs-identifier">appendTip</span></a></span><span>
+</span><span id="line-24"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#collapseNode"><span class="hs-identifier">collapseNode</span></a></span><span>
+</span><span id="line-25"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#rollbackTo"><span class="hs-identifier">rollbackTo</span></a></span><span>
+</span><span id="line-26"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#chainIntoTable"><span class="hs-identifier">chainIntoTable</span></a></span><span>
+</span><span id="line-27"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#ErrMalformedChainTable"><span class="hs-identifier">ErrMalformedChainTable</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Edge</span></span><span>
+</span><span id="line-30"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier">Edge</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#flattenEdge"><span class="hs-identifier">flattenEdge</span></a></span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Testing</span></span><span>
+</span><span id="line-34"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#testChain"><span class="hs-identifier">testChain</span></a></span><span>
+</span><span id="line-35"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Prelude</span></span><span> </span><span class="hs-keyword">hiding</span><span>
+</span><span id="line-38"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">lookup</span></span><span>
+</span><span id="line-39"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Exception</span></span><span>
+</span><span id="line-42"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Exception</span></span><span>
+</span><span id="line-43"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">toException</span></span><span>
+</span><span id="line-44"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span>
+</span><span id="line-46"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">guard</span></span><span>
+</span><span id="line-47"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">join</span></span><span>
+</span><span id="line-48"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(&lt;=&lt;)</span></span><span>
+</span><span id="line-49"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Bifunctor</span></span><span>
+</span><span id="line-51"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">first</span></span><span>
+</span><span id="line-52"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Delta</span></span><span>
+</span><span id="line-54"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Delta</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">Embedding</span></span><span>
+</span><span id="line-56"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">Embedding'</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">liftUpdates</span></span><span>
+</span><span id="line-58"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">mkEmbedding</span></span><span>
+</span><span id="line-59"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-60"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span>
+</span><span id="line-61"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">unfoldr</span></span><span>
+</span><span id="line-62"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-63"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span>
+</span><span id="line-64"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-65"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-66"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Semigroupoid</span></span><span>
+</span><span id="line-67"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">o</span></span><span>
+</span><span id="line-68"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Table.html"><span class="hs-identifier">Data.Table</span></a></span><span>
+</span><span id="line-70"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Table.html#DeltaTable"><span class="hs-identifier">DeltaTable</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-71"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Table.html#Pile"><span class="hs-identifier">Pile</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-72"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Table.html#Table"><span class="hs-identifier">Table</span></a></span><span>
+</span><span id="line-73"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-76"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Data.Table.html"><span class="hs-identifier">Data.Table</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Table</span></span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    Chain
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-81"></span><span class="hs-comment">-- | A linear chain of nodes.</span><span>
+</span><span id="line-82"></span><span class="hs-comment">-- Edges between nodes are labeled by a 'Monoid' @edge@.</span><span>
+</span><span id="line-83"></span><span class="hs-comment">--</span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-85"></span><span class="hs-comment">--   n_tip  &lt;--e_tip-- &#8230; &lt;--e1-- n1 &lt;--e0-- n0</span><span>
+</span><span id="line-86"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-87"></span><span class="hs-keyword">data</span><span> </span><span id="Chain"><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-var">Chain</span></a></span></span><span> </span><span id="local-6989586621679119836"><span class="annot"><a href="#local-6989586621679119836"><span class="hs-identifier hs-type">node</span></a></span></span><span> </span><span id="local-6989586621679119837"><span class="annot"><a href="#local-6989586621679119837"><span class="hs-identifier hs-type">edge</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Chain"><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-var">Chain</span></a></span></span><span>
+</span><span id="line-88"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="next"><span class="annot"><span class="annottext">forall node edge. Chain node edge -&gt; Map node (edge, node)
+</span><a href="Data.Chain.html#next"><span class="hs-identifier hs-var hs-var">next</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679119836"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679119837"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679119836"><span class="hs-identifier hs-type">node</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-89"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="prev"><span class="annot"><span class="annottext">forall node edge. Chain node edge -&gt; Map node (Maybe node)
+</span><a href="Data.Chain.html#prev"><span class="hs-identifier hs-var hs-var">prev</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679119836"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679119836"><span class="hs-identifier hs-type">node</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-90"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="tip"><span class="annot"><span class="annottext">forall node edge. Chain node edge -&gt; node
+</span><a href="Data.Chain.html#tip"><span class="hs-identifier hs-var hs-var">tip</span></a></span></span><span>  </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679119836"><span class="hs-identifier hs-type">node</span></a></span><span>
+</span><span id="line-91"></span><span>    </span><span class="hs-special">}</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120111"><span id="local-6989586621679120119"><span class="annot"><span class="annottext">Chain node edge -&gt; Chain node edge -&gt; Bool
+(Chain node edge -&gt; Chain node edge -&gt; Bool)
+-&gt; (Chain node edge -&gt; Chain node edge -&gt; Bool)
+-&gt; Eq (Chain node edge)
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+forall node edge.
+(Eq edge, Eq node) =&gt;
+Chain node edge -&gt; Chain node edge -&gt; Bool
+$c== :: forall node edge.
+(Eq edge, Eq node) =&gt;
+Chain node edge -&gt; Chain node edge -&gt; Bool
+== :: Chain node edge -&gt; Chain node edge -&gt; Bool
+$c/= :: forall node edge.
+(Eq edge, Eq node) =&gt;
+Chain node edge -&gt; Chain node edge -&gt; Bool
+/= :: Chain node edge -&gt; Chain node edge -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120128"><span id="local-6989586621679120137"><span id="local-6989586621679120141"><span class="annot"><span class="annottext">Int -&gt; Chain node edge -&gt; ShowS
+[Chain node edge] -&gt; ShowS
+Chain node edge -&gt; [Char]
+(Int -&gt; Chain node edge -&gt; ShowS)
+-&gt; (Chain node edge -&gt; [Char])
+-&gt; ([Chain node edge] -&gt; ShowS)
+-&gt; Show (Chain node edge)
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; [Char]) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+forall node edge.
+(Show edge, Show node) =&gt;
+Int -&gt; Chain node edge -&gt; ShowS
+forall node edge.
+(Show edge, Show node) =&gt;
+[Chain node edge] -&gt; ShowS
+forall node edge.
+(Show edge, Show node) =&gt;
+Chain node edge -&gt; [Char]
+$cshowsPrec :: forall node edge.
+(Show edge, Show node) =&gt;
+Int -&gt; Chain node edge -&gt; ShowS
+showsPrec :: Int -&gt; Chain node edge -&gt; ShowS
+$cshow :: forall node edge.
+(Show edge, Show node) =&gt;
+Chain node edge -&gt; [Char]
+show :: Chain node edge -&gt; [Char]
+$cshowList :: forall node edge.
+(Show edge, Show node) =&gt;
+[Chain node edge] -&gt; ShowS
+showList :: [Chain node edge] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679119873"><span id="local-6989586621679120149"><span class="annot"><span class="hs-identifier hs-type">Functor</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119873"><span class="hs-identifier hs-type">node</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-94"></span><span>    </span><span id="local-6989586621679120157"><span class="annot"><span class="annottext">fmap :: forall a b. (a -&gt; b) -&gt; Chain node a -&gt; Chain node b
+</span><span class="hs-identifier hs-var hs-var hs-var">fmap</span></span></span><span> </span><span id="local-6989586621679120158"><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621679120158"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679120159"><span class="annot"><span class="annottext">Chain node a
+</span><a href="#local-6989586621679120159"><span class="hs-identifier hs-var">chain</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Chain node a
+</span><a href="#local-6989586621679120159"><span class="hs-identifier hs-var">chain</span></a></span><span class="hs-special">{</span><span> </span><span class="annot"><a href="Data.Chain.html#next"><span class="hs-identifier hs-var">next</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">first</span></span><span> </span><span class="annot"><a href="#local-6989586621679120158"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#next"><span class="hs-identifier hs-var">next</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120159"><span class="hs-identifier hs-type">chain</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">}</span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span class="annot"><span class="hs-comment">-- | Test whether a node is contained in the chain.</span></span><span>
+</span><span id="line-97"></span><span id="local-6989586621679119882"><span id="local-6989586621679119883"><span class="annot"><a href="Data.Chain.html#member"><span class="hs-identifier hs-type">member</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679119882"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679119882"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119882"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119883"><span class="hs-identifier hs-type">edge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span></span><span>
+</span><span id="line-98"></span><span id="member"><span class="annot"><span class="annottext">member :: forall node edge. Ord node =&gt; node -&gt; Chain node edge -&gt; Bool
+</span><a href="Data.Chain.html#member"><span class="hs-identifier hs-var hs-var">member</span></a></span></span><span> </span><span id="local-6989586621679120162"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120162"><span class="hs-identifier hs-var">node</span></a></span></span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span class="hs-special">{</span><span id="local-6989586621679120163"><span class="annot"><span class="annottext">Map node (Maybe node)
+prev :: forall node edge. Chain node edge -&gt; Map node (Maybe node)
+prev :: Map node (Maybe node)
+</span><a href="Data.Chain.html#prev"><span class="hs-identifier hs-var hs-var">prev</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120162"><span class="hs-identifier hs-var">node</span></a></span><span> </span><span class="annot"><span class="annottext">node -&gt; Map node (Maybe node) -&gt; Bool
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Bool
+</span><span class="hs-operator hs-var">`Map.member`</span></span><span> </span><span class="annot"><span class="annottext">Map node (Maybe node)
+</span><a href="#local-6989586621679120163"><span class="hs-identifier hs-var">prev</span></a></span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span class="annot"><span class="hs-comment">-- | Context (incoming and outgoing edges) for a @node@ in a 'Chain'.</span></span><span>
+</span><span id="line-101"></span><span class="hs-keyword">type</span><span> </span><span id="ChainContext"><span class="annot"><a href="Data.Chain.html#ChainContext"><span class="hs-identifier hs-var">ChainContext</span></a></span></span><span> </span><span id="local-6989586621679120165"><span class="annot"><a href="#local-6989586621679120165"><span class="hs-identifier hs-type">node</span></a></span></span><span> </span><span id="local-6989586621679120166"><span class="annot"><a href="#local-6989586621679120166"><span class="hs-identifier hs-type">edge</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679120166"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">,</span><span class="annot"><a href="#local-6989586621679120165"><span class="hs-identifier hs-type">node</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679120165"><span class="hs-identifier hs-type">node</span></a></span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span class="annot"><span class="hs-comment">-- | Look up the 'Context' of a node in a 'Chain'.</span></span><span>
+</span><span id="line-104"></span><span id="local-6989586621679119888"><span id="local-6989586621679119889"><span class="annot"><a href="Data.Chain.html#lookup"><span class="hs-identifier hs-type">lookup</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679119888"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679119888"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119888"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119889"><span class="hs-identifier hs-type">edge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#ChainContext"><span class="hs-identifier hs-type">ChainContext</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119888"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119889"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-105"></span><span id="lookup"><span class="annot"><span class="annottext">lookup :: forall node edge.
+Ord node =&gt;
+node -&gt; Chain node edge -&gt; Maybe (ChainContext node edge)
+</span><a href="Data.Chain.html#lookup"><span class="hs-identifier hs-var hs-var">lookup</span></a></span></span><span> </span><span id="local-6989586621679120173"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120173"><span class="hs-identifier hs-var">node</span></a></span></span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span class="hs-special">{</span><span id="local-6989586621679120174"><span class="annot"><span class="annottext">Map node (edge, node)
+next :: forall node edge. Chain node edge -&gt; Map node (edge, node)
+next :: Map node (edge, node)
+</span><a href="Data.Chain.html#next"><span class="hs-identifier hs-var hs-var">next</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120175"><span class="annot"><span class="annottext">Map node (Maybe node)
+prev :: forall node edge. Chain node edge -&gt; Map node (Maybe node)
+prev :: Map node (Maybe node)
+</span><a href="Data.Chain.html#prev"><span class="hs-identifier hs-var hs-var">prev</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-106"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">node -&gt; Map node (edge, node) -&gt; Maybe (edge, node)
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120173"><span class="hs-identifier hs-var">node</span></a></span><span> </span><span class="annot"><span class="annottext">Map node (edge, node)
+</span><a href="#local-6989586621679120174"><span class="hs-identifier hs-var">next</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">node -&gt; Map node (Maybe node) -&gt; Maybe (Maybe node)
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120173"><span class="hs-identifier hs-var">node</span></a></span><span> </span><span class="annot"><span class="annottext">Map node (Maybe node)
+</span><a href="#local-6989586621679120175"><span class="hs-identifier hs-var">prev</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-107"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe (edge, node)
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Maybe (Maybe node)
+</span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-108"></span><span>            </span><span class="annot"><span class="annottext">Maybe (ChainContext node edge)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-109"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621679120177"><span class="annot"><span class="annottext">Maybe (edge, node)
+</span><a href="#local-6989586621679120177"><span class="hs-identifier hs-var">after</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><span class="annottext">Maybe node
+</span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-110"></span><span>            </span><span class="annot"><span class="annottext">ChainContext node edge -&gt; Maybe (ChainContext node edge)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">via :: node
+</span><a href="Data.Chain.html#via"><span class="hs-keyword hs-var">via</span></a></span><span class="hs-glyph">=</span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120173"><span class="hs-identifier hs-var">node</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">to :: Maybe (edge, node)
+</span><a href="Data.Chain.html#to"><span class="hs-identifier hs-var">to</span></a></span><span class="hs-glyph">=</span><span class="annot"><span class="annottext">Maybe (edge, node)
+</span><a href="#local-6989586621679120177"><span class="hs-identifier hs-var">after</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">from :: Maybe (edge, node)
+</span><a href="Data.Chain.html#from"><span class="hs-identifier hs-var">from</span></a></span><span class="hs-glyph">=</span><span class="annot"><span class="annottext">Maybe (edge, node)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-special">}</span><span>
+</span><span id="line-111"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621679120182"><span class="annot"><span class="annottext">Maybe (edge, node)
+</span><a href="#local-6989586621679120182"><span class="hs-identifier hs-var">after</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679120183"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120183"><span class="hs-identifier hs-var">before</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679120184"><span class="annot"><span class="annottext">adjust :: (edge, node) -&gt; (edge, node)
+</span><a href="#local-6989586621679120184"><span class="hs-identifier hs-var hs-var">adjust</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120185"><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120185"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">,</span><span class="annot"><span class="annottext">node
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120185"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120183"><span class="hs-identifier hs-var">before</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span>
+</span><span id="line-112"></span><span>            </span><span class="annot"><span class="annottext">ChainContext node edge -&gt; Maybe (ChainContext node edge)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">via :: node
+</span><a href="Data.Chain.html#via"><span class="hs-keyword hs-var">via</span></a></span><span class="hs-glyph">=</span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120173"><span class="hs-identifier hs-var">node</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">to :: Maybe (edge, node)
+</span><a href="Data.Chain.html#to"><span class="hs-identifier hs-var">to</span></a></span><span class="hs-glyph">=</span><span class="annot"><span class="annottext">Maybe (edge, node)
+</span><a href="#local-6989586621679120182"><span class="hs-identifier hs-var">after</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">from :: Maybe (edge, node)
+</span><a href="Data.Chain.html#from"><span class="hs-identifier hs-var">from</span></a></span><span class="hs-glyph">=</span><span class="annot"><span class="annottext">(edge, node) -&gt; (edge, node)
+</span><a href="#local-6989586621679120184"><span class="hs-identifier hs-var">adjust</span></a></span><span> </span><span class="annot"><span class="annottext">((edge, node) -&gt; (edge, node))
+-&gt; Maybe (edge, node) -&gt; Maybe (edge, node)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">node -&gt; Map node (edge, node) -&gt; Maybe (edge, node)
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120183"><span class="hs-identifier hs-var">before</span></a></span><span> </span><span class="annot"><span class="annottext">Map node (edge, node)
+</span><a href="#local-6989586621679120174"><span class="hs-identifier hs-var">next</span></a></span><span> </span><span class="hs-special">}</span><span>
+</span><span id="line-113"></span><span>
+</span><span id="line-114"></span><span class="hs-comment">{-
+-- | Chain with a single node and no edges.
+--
+-- FIXME: This cannot be represented in a database that only stores edges.
+singleton :: Ord node =&gt; node -&gt; Chain node edge
+singleton node = Chain
+    { next = Map.empty
+    , prev = Map.fromList [(node, Nothing)]
+    , tip  = node
+    }
+-}</span><span>
+</span><span id="line-125"></span><span>
+</span><span id="line-126"></span><span class="annot"><span class="hs-comment">-- | Construct a chain from a single 'Edge'.</span></span><span>
+</span><span id="line-127"></span><span id="local-6989586621679119898"><span id="local-6989586621679119899"><span class="annot"><a href="Data.Chain.html#fromEdge"><span class="hs-identifier hs-type">fromEdge</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679119898"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119898"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119899"><span class="hs-identifier hs-type">edge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119898"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119899"><span class="hs-identifier hs-type">edge</span></a></span></span></span><span>
+</span><span id="line-128"></span><span id="fromEdge"><span class="annot"><span class="annottext">fromEdge :: forall node edge. Ord node =&gt; Edge node edge -&gt; Chain node edge
+</span><a href="Data.Chain.html#fromEdge"><span class="hs-identifier hs-var hs-var">fromEdge</span></a></span></span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span id="local-6989586621679120190"><span class="annot"><span class="annottext">node
+from :: forall node edge. Edge node edge -&gt; node
+from :: node
+</span><a href="Data.Chain.html#from"><span class="hs-identifier hs-var hs-var">from</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120191"><span class="annot"><span class="annottext">node
+to :: forall node edge. Edge node edge -&gt; node
+to :: node
+</span><a href="Data.Chain.html#to"><span class="hs-identifier hs-var hs-var">to</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120192"><span class="annot"><span class="annottext">edge
+via :: forall node edge. Edge node edge -&gt; edge
+via :: edge
+</span><a href="Data.Chain.html#via"><span class="hs-keyword hs-var hs-var">via</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span>
+</span><span id="line-129"></span><span>    </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">next :: Map node (edge, node)
+</span><a href="Data.Chain.html#next"><span class="hs-identifier hs-var">next</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(node, (edge, node))] -&gt; Map node (edge, node)
+forall k a. Ord k =&gt; [(k, a)] -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.fromList</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120190"><span class="hs-identifier hs-var">from</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120192"><span class="hs-keyword hs-var">via</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120191"><span class="hs-identifier hs-var">to</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-130"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">prev :: Map node (Maybe node)
+</span><a href="Data.Chain.html#prev"><span class="hs-identifier hs-var">prev</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(node, Maybe node)] -&gt; Map node (Maybe node)
+forall k a. Ord k =&gt; [(k, a)] -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.fromList</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120191"><span class="hs-identifier hs-var">to</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">node -&gt; Maybe node
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120190"><span class="hs-identifier hs-var">from</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120190"><span class="hs-identifier hs-var">from</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Maybe node
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-131"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">tip :: node
+</span><a href="Data.Chain.html#tip"><span class="hs-identifier hs-var">tip</span></a></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120191"><span class="hs-identifier hs-var">to</span></a></span><span>
+</span><span id="line-132"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-133"></span><span>
+</span><span id="line-134"></span><span class="hs-comment">{- HLINT ignore fromEdges &quot;Fuse foldr/map&quot; -}</span><span>
+</span><span id="line-135"></span><span class="hs-comment">-- | Construct a chain from a collection of edges.</span><span>
+</span><span id="line-136"></span><span class="hs-comment">-- Fails if the edges do not fit together.</span><span>
+</span><span id="line-137"></span><span class="hs-comment">--</span><span>
+</span><span id="line-138"></span><span class="hs-comment">-- The ordering of edge labels of a single edge in the chain will</span><span>
+</span><span id="line-139"></span><span class="hs-comment">-- be the same as the ordering of the edge labels as they</span><span>
+</span><span id="line-140"></span><span class="hs-comment">-- appear in the list.</span><span>
+</span><span id="line-141"></span><span id="local-6989586621679119907"><span id="local-6989586621679119908"><span class="annot"><a href="Data.Chain.html#fromEdges"><span class="hs-identifier hs-type">fromEdges</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679119907"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119907"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119908"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119907"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679119908"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-142"></span><span id="fromEdges"><span class="annot"><span class="annottext">fromEdges :: forall node edge.
+Ord node =&gt;
+[Edge node edge] -&gt; Maybe (Chain node [edge])
+</span><a href="Data.Chain.html#fromEdges"><span class="hs-identifier hs-var hs-var">fromEdges</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>     </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (Chain node [edge])
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-143"></span><span class="annot"><a href="Data.Chain.html#fromEdges"><span class="hs-identifier hs-var">fromEdges</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120202"><span class="annot"><span class="annottext">Edge node edge
+</span><a href="#local-6989586621679120202"><span class="hs-identifier hs-var">e</span></a></span></span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span id="local-6989586621679120203"><span class="annot"><span class="annottext">[Edge node edge]
+</span><a href="#local-6989586621679120203"><span class="hs-identifier hs-var">es</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Chain node [edge] -&gt; Maybe (Chain node [edge]))
+-&gt; Chain node [edge] -&gt; Maybe (Chain node [edge])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Edge node edge -&gt; Chain node [edge]
+forall {a}. Edge node a -&gt; Chain node [a]
+</span><a href="#local-6989586621679120204"><span class="hs-identifier hs-var">fromEdge'</span></a></span><span> </span><span class="annot"><span class="annottext">Edge node edge
+</span><a href="#local-6989586621679120202"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Chain node [edge] -&gt; Maybe (Chain node [edge]))
+ -&gt; Maybe (Chain node [edge]))
+-&gt; ([Chain node [edge] -&gt; Maybe (Chain node [edge])]
+    -&gt; Chain node [edge] -&gt; Maybe (Chain node [edge]))
+-&gt; [Chain node [edge] -&gt; Maybe (Chain node [edge])]
+-&gt; Maybe (Chain node [edge])
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">((Chain node [edge] -&gt; Maybe (Chain node [edge]))
+ -&gt; (Chain node [edge] -&gt; Maybe (Chain node [edge]))
+ -&gt; Chain node [edge]
+ -&gt; Maybe (Chain node [edge]))
+-&gt; (Chain node [edge] -&gt; Maybe (Chain node [edge]))
+-&gt; [Chain node [edge] -&gt; Maybe (Chain node [edge])]
+-&gt; Chain node [edge]
+-&gt; Maybe (Chain node [edge])
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+forall (t :: * -&gt; *) a b.
+Foldable t =&gt;
+(a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">(Chain node [edge] -&gt; Maybe (Chain node [edge]))
+-&gt; (Chain node [edge] -&gt; Maybe (Chain node [edge]))
+-&gt; Chain node [edge]
+-&gt; Maybe (Chain node [edge])
+forall (m :: * -&gt; *) b c a.
+Monad m =&gt;
+(b -&gt; m c) -&gt; (a -&gt; m b) -&gt; a -&gt; m c
+</span><span class="hs-operator hs-var">(&lt;=&lt;)</span></span><span> </span><span class="annot"><span class="annottext">Chain node [edge] -&gt; Maybe (Chain node [edge])
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">([Chain node [edge] -&gt; Maybe (Chain node [edge])]
+ -&gt; Maybe (Chain node [edge]))
+-&gt; [Chain node [edge] -&gt; Maybe (Chain node [edge])]
+-&gt; Maybe (Chain node [edge])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Edge node edge -&gt; Chain node [edge] -&gt; Maybe (Chain node [edge]))
+-&gt; [Edge node edge]
+-&gt; [Chain node [edge] -&gt; Maybe (Chain node [edge])]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Edge node edge -&gt; Chain node [edge] -&gt; Maybe (Chain node [edge])
+forall node edge.
+Ord node =&gt;
+Edge node edge -&gt; Chain node [edge] -&gt; Maybe (Chain node [edge])
+</span><a href="Data.Chain.html#addEdge"><span class="hs-identifier hs-var">addEdge</span></a></span><span> </span><span class="annot"><span class="annottext">[Edge node edge]
+</span><a href="#local-6989586621679120203"><span class="hs-identifier hs-var">es</span></a></span><span>
+</span><span id="line-144"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679120204"><span class="annot"><span class="annottext">fromEdge' :: Edge node a -&gt; Chain node [a]
+</span><a href="#local-6989586621679120204"><span class="hs-identifier hs-var hs-var">fromEdge'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; [a]) -&gt; Chain node a -&gt; Chain node [a]
+forall a b. (a -&gt; b) -&gt; Chain node a -&gt; Chain node b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Chain node a -&gt; Chain node [a])
+-&gt; (Edge node a -&gt; Chain node a) -&gt; Edge node a -&gt; Chain node [a]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Edge node a -&gt; Chain node a
+forall node edge. Ord node =&gt; Edge node edge -&gt; Chain node edge
+</span><a href="Data.Chain.html#fromEdge"><span class="hs-identifier hs-var">fromEdge</span></a></span><span>
+</span><span id="line-145"></span><span>
+</span><span id="line-146"></span><span class="hs-comment">-- | List all edges in the 'Chain'.</span><span>
+</span><span id="line-147"></span><span class="hs-comment">--</span><span>
+</span><span id="line-148"></span><span class="hs-comment">-- The edge that points to the tip is listed /first/,</span><span>
+</span><span id="line-149"></span><span class="hs-comment">-- and the edge that starts at the beginning is listed /last/.</span><span>
+</span><span id="line-150"></span><span id="local-6989586621679119931"><span id="local-6989586621679119932"><span class="annot"><a href="Data.Chain.html#edges"><span class="hs-identifier hs-type">edges</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679119931"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119931"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119932"><span class="hs-identifier hs-type">edge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679119932"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-151"></span><span id="edges"><span class="annot"><span class="annottext">edges :: forall node edge. Ord node =&gt; Chain node edge -&gt; [edge]
+</span><a href="Data.Chain.html#edges"><span class="hs-identifier hs-var hs-var">edges</span></a></span></span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span class="hs-special">{</span><span id="local-6989586621679120219"><span class="annot"><span class="annottext">Map node (Maybe node)
+prev :: forall node edge. Chain node edge -&gt; Map node (Maybe node)
+prev :: Map node (Maybe node)
+</span><a href="Data.Chain.html#prev"><span class="hs-identifier hs-var hs-var">prev</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120220"><span class="annot"><span class="annottext">Map node (edge, node)
+next :: forall node edge. Chain node edge -&gt; Map node (edge, node)
+next :: Map node (edge, node)
+</span><a href="Data.Chain.html#next"><span class="hs-identifier hs-var hs-var">next</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120221"><span class="annot"><span class="annottext">node
+tip :: forall node edge. Chain node edge -&gt; node
+tip :: node
+</span><a href="Data.Chain.html#tip"><span class="hs-identifier hs-var hs-var">tip</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(node -&gt; Maybe (edge, node)) -&gt; node -&gt; [edge]
+forall b a. (b -&gt; Maybe (a, b)) -&gt; b -&gt; [a]
+</span><span class="hs-identifier hs-var">unfoldr</span></span><span> </span><span class="annot"><span class="annottext">node -&gt; Maybe (edge, node)
+</span><a href="#local-6989586621679120222"><span class="hs-identifier hs-var">backwards</span></a></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120221"><span class="hs-identifier hs-var">tip</span></a></span><span>
+</span><span id="line-152"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-153"></span><span>    </span><span id="local-6989586621679120222"><span class="annot"><span class="annottext">backwards :: node -&gt; Maybe (edge, node)
+</span><a href="#local-6989586621679120222"><span class="hs-identifier hs-var hs-var">backwards</span></a></span></span><span> </span><span id="local-6989586621679120223"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120223"><span class="hs-identifier hs-var">now</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-154"></span><span>        </span><span id="local-6989586621679120224"><span class="annot"><a href="#local-6989586621679120224"><span class="hs-identifier hs-var">before</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe (Maybe node) -&gt; Maybe node
+forall (m :: * -&gt; *) a. Monad m =&gt; m (m a) -&gt; m a
+</span><span class="hs-identifier hs-var">join</span></span><span> </span><span class="annot"><span class="annottext">(Maybe (Maybe node) -&gt; Maybe node)
+-&gt; Maybe (Maybe node) -&gt; Maybe node
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">node -&gt; Map node (Maybe node) -&gt; Maybe (Maybe node)
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120223"><span class="hs-identifier hs-var">now</span></a></span><span> </span><span class="annot"><span class="annottext">Map node (Maybe node)
+</span><a href="#local-6989586621679120219"><span class="hs-identifier hs-var">prev</span></a></span><span>
+</span><span id="line-155"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621679120225"><span class="annot"><a href="#local-6989586621679120225"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">,</span><span class="annot"><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map.lookup</span></span><span> </span><span class="annot"><a href="#local-6989586621679120224"><span class="hs-identifier hs-type">before</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120220"><span class="hs-identifier hs-type">next</span></a></span><span>
+</span><span id="line-156"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679120225"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">,</span><span class="annot"><a href="#local-6989586621679120224"><span class="hs-identifier hs-type">before</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-157"></span><span>
+</span><span id="line-158"></span><span class="hs-comment">-- | List all nodes in the 'Chain'.</span><span>
+</span><span id="line-159"></span><span class="hs-comment">-- The tip is listed /first/.</span><span>
+</span><span id="line-160"></span><span id="local-6989586621679119941"><span id="local-6989586621679119942"><span class="annot"><a href="Data.Chain.html#nodes"><span class="hs-identifier hs-type">nodes</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679119941"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119941"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119942"><span class="hs-identifier hs-type">edge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679119941"><span class="hs-identifier hs-type">node</span></a></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-161"></span><span id="nodes"><span class="annot"><span class="annottext">nodes :: forall node edge. Ord node =&gt; Chain node edge -&gt; [node]
+</span><a href="Data.Chain.html#nodes"><span class="hs-identifier hs-var hs-var">nodes</span></a></span></span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span class="hs-special">{</span><span id="local-6989586621679120233"><span class="annot"><span class="annottext">Map node (Maybe node)
+prev :: forall node edge. Chain node edge -&gt; Map node (Maybe node)
+prev :: Map node (Maybe node)
+</span><a href="Data.Chain.html#prev"><span class="hs-identifier hs-var hs-var">prev</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120234"><span class="annot"><span class="annottext">Map node (edge, node)
+next :: forall node edge. Chain node edge -&gt; Map node (edge, node)
+next :: Map node (edge, node)
+</span><a href="Data.Chain.html#next"><span class="hs-identifier hs-var hs-var">next</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120235"><span class="annot"><span class="annottext">node
+tip :: forall node edge. Chain node edge -&gt; node
+tip :: node
+</span><a href="Data.Chain.html#tip"><span class="hs-identifier hs-var hs-var">tip</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120235"><span class="hs-identifier hs-var">tip</span></a></span><span> </span><span class="annot"><span class="annottext">node -&gt; [node] -&gt; [node]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">(node -&gt; Maybe (node, node)) -&gt; node -&gt; [node]
+forall b a. (b -&gt; Maybe (a, b)) -&gt; b -&gt; [a]
+</span><span class="hs-identifier hs-var">unfoldr</span></span><span> </span><span class="annot"><span class="annottext">node -&gt; Maybe (node, node)
+</span><a href="#local-6989586621679120236"><span class="hs-identifier hs-var">backwards</span></a></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120235"><span class="hs-identifier hs-var">tip</span></a></span><span>
+</span><span id="line-162"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-163"></span><span>    </span><span id="local-6989586621679120236"><span class="annot"><span class="annottext">backwards :: node -&gt; Maybe (node, node)
+</span><a href="#local-6989586621679120236"><span class="hs-identifier hs-var hs-var">backwards</span></a></span></span><span> </span><span id="local-6989586621679120237"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120237"><span class="hs-identifier hs-var">now</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-164"></span><span>        </span><span id="local-6989586621679120238"><span class="annot"><a href="#local-6989586621679120238"><span class="hs-identifier hs-var">before</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe (Maybe node) -&gt; Maybe node
+forall (m :: * -&gt; *) a. Monad m =&gt; m (m a) -&gt; m a
+</span><span class="hs-identifier hs-var">join</span></span><span> </span><span class="annot"><span class="annottext">(Maybe (Maybe node) -&gt; Maybe node)
+-&gt; Maybe (Maybe node) -&gt; Maybe node
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">node -&gt; Map node (Maybe node) -&gt; Maybe (Maybe node)
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120237"><span class="hs-identifier hs-var">now</span></a></span><span> </span><span class="annot"><span class="annottext">Map node (Maybe node)
+</span><a href="#local-6989586621679120233"><span class="hs-identifier hs-var">prev</span></a></span><span>
+</span><span id="line-165"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span class="annot"><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map.lookup</span></span><span> </span><span class="annot"><a href="#local-6989586621679120238"><span class="hs-identifier hs-type">before</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120234"><span class="hs-identifier hs-type">next</span></a></span><span>
+</span><span id="line-166"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679120238"><span class="hs-identifier hs-type">before</span></a></span><span class="hs-special">,</span><span class="annot"><a href="#local-6989586621679120238"><span class="hs-identifier hs-type">before</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-167"></span><span>
+</span><span id="line-168"></span><span class="annot"><span class="hs-comment">-- | Convert a 'Chain' into a list of 'Edge'.</span></span><span>
+</span><span id="line-169"></span><span id="local-6989586621679119945"><span id="local-6989586621679119946"><span class="annot"><a href="Data.Chain.html#toEdges"><span class="hs-identifier hs-type">toEdges</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119945"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119946"><span class="hs-identifier hs-type">edge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119945"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119946"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-170"></span><span id="toEdges"><span class="annot"><span class="annottext">toEdges :: forall node edge. Chain node edge -&gt; [Edge node edge]
+</span><a href="Data.Chain.html#toEdges"><span class="hs-identifier hs-var hs-var">toEdges</span></a></span></span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span class="hs-special">{</span><span id="local-6989586621679120239"><span class="annot"><span class="annottext">Map node (edge, node)
+next :: forall node edge. Chain node edge -&gt; Map node (edge, node)
+next :: Map node (edge, node)
+</span><a href="Data.Chain.html#next"><span class="hs-identifier hs-var hs-var">next</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-171"></span><span>    </span><span class="hs-special">[</span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">node
+from :: node
+from :: node
+</span><a href="Data.Chain.html#from"><span class="hs-identifier hs-var hs-var">from</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">node
+to :: node
+to :: node
+</span><a href="Data.Chain.html#to"><span class="hs-identifier hs-var hs-var">to</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">edge
+via :: edge
+via :: edge
+</span><a href="Data.Chain.html#via"><span class="hs-keyword hs-var hs-var">via</span></a></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120240"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120240"><span class="hs-identifier hs-var">from</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120242"><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120242"><span class="hs-keyword hs-var">via</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120241"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120241"><span class="hs-identifier hs-var">to</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Map node (edge, node) -&gt; [(node, (edge, node))]
+forall k a. Map k a -&gt; [(k, a)]
+</span><span class="hs-identifier hs-var">Map.toList</span></span><span> </span><span class="annot"><span class="annottext">Map node (edge, node)
+</span><a href="#local-6989586621679120239"><span class="hs-identifier hs-var">next</span></a></span><span> </span><span class="hs-special">]</span><span>
+</span><span id="line-172"></span><span>
+</span><span id="line-173"></span><span class="hs-comment">-- | Combine all the edges in the 'Chain'.</span><span>
+</span><span id="line-174"></span><span class="hs-comment">-- The summary is invariant under 'collapseNode'.</span><span>
+</span><span id="line-175"></span><span class="hs-comment">--</span><span>
+</span><span id="line-176"></span><span class="hs-comment">-- &gt; summary = mconcat . edges</span><span>
+</span><span id="line-177"></span><span id="local-6989586621679119951"><span id="local-6989586621679119952"><span class="annot"><a href="Data.Chain.html#summary"><span class="hs-identifier hs-type">summary</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679119951"><span class="hs-identifier hs-type">node</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679119952"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119951"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119952"><span class="hs-identifier hs-type">edge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679119952"><span class="hs-identifier hs-type">edge</span></a></span></span></span><span>
+</span><span id="line-178"></span><span id="summary"><span class="annot"><span class="annottext">summary :: forall node edge.
+(Ord node, Monoid edge) =&gt;
+Chain node edge -&gt; edge
+</span><a href="Data.Chain.html#summary"><span class="hs-identifier hs-var hs-var">summary</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[edge] -&gt; edge
+forall a. Monoid a =&gt; [a] -&gt; a
+</span><span class="hs-identifier hs-var">mconcat</span></span><span> </span><span class="annot"><span class="annottext">([edge] -&gt; edge)
+-&gt; (Chain node edge -&gt; [edge]) -&gt; Chain node edge -&gt; edge
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Chain node edge -&gt; [edge]
+forall node edge. Ord node =&gt; Chain node edge -&gt; [edge]
+</span><a href="Data.Chain.html#edges"><span class="hs-identifier hs-var">edges</span></a></span><span>
+</span><span id="line-179"></span><span class="hs-comment">-- FIXME: If a Chain without edges does not exist, then</span><span>
+</span><span id="line-180"></span><span class="hs-comment">-- we can go to Semigroup here.</span><span>
+</span><span id="line-181"></span><span>
+</span><span id="line-182"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    DeltaChain
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-185"></span><span class="annot"><span class="hs-comment">-- | Changes to a 'Chain'.</span></span><span>
+</span><span id="line-186"></span><span class="hs-keyword">data</span><span> </span><span id="DeltaChain"><span class="annot"><a href="Data.Chain.html#DeltaChain"><span class="hs-identifier hs-var">DeltaChain</span></a></span></span><span> </span><span id="local-6989586621679120032"><span class="annot"><a href="#local-6989586621679120032"><span class="hs-identifier hs-type">node</span></a></span></span><span> </span><span id="local-6989586621679120033"><span class="annot"><a href="#local-6989586621679120033"><span class="hs-identifier hs-type">edge</span></a></span></span><span>
+</span><span id="line-187"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="AppendTip"><span class="annot"><a href="Data.Chain.html#AppendTip"><span class="hs-identifier hs-var">AppendTip</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621679120032"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120033"><span class="hs-identifier hs-type">edge</span></a></span><span>
+</span><span id="line-188"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ See 'appendTip'.</span></span><span>
+</span><span id="line-189"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="CollapseNode"><span class="annot"><a href="Data.Chain.html#CollapseNode"><span class="hs-identifier hs-var">CollapseNode</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621679120032"><span class="hs-identifier hs-type">node</span></a></span><span>
+</span><span id="line-190"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ See 'collapseNode'.</span></span><span>
+</span><span id="line-191"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="RollbackTo"><span class="annot"><a href="Data.Chain.html#RollbackTo"><span class="hs-identifier hs-var">RollbackTo</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621679120032"><span class="hs-identifier hs-type">node</span></a></span><span>
+</span><span id="line-192"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ See 'rollbackTo'.</span></span><span>
+</span><span id="line-193"></span><span>
+</span><span id="line-194"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679119834"><span id="local-6989586621679119835"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679119834"><span class="hs-identifier hs-type">node</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679119835"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Delta</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#DeltaChain"><span class="hs-identifier hs-type">DeltaChain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119834"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119835"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-195"></span><span>    </span><span class="hs-keyword">type</span><span> </span><span id="Base"><span class="annot"><span class="hs-identifier hs-var">Base</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#DeltaChain"><span class="hs-identifier hs-type">DeltaChain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119834"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119835"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119834"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119835"><span class="hs-identifier hs-type">edge</span></a></span><span>
+</span><span id="line-196"></span><span>    </span><span id="local-6989586621679120259"><span class="annot"><span class="annottext">apply :: DeltaChain node edge
+-&gt; Base (DeltaChain node edge) -&gt; Base (DeltaChain node edge)
+</span><a href="#local-6989586621679120259"><span class="hs-identifier hs-var hs-var hs-var">apply</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#AppendTip"><span class="hs-identifier hs-type">AppendTip</span></a></span><span> </span><span id="local-6989586621679120261"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120261"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679120262"><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120262"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">node -&gt; edge -&gt; Chain node edge -&gt; Chain node edge
+forall node edge.
+Ord node =&gt;
+node -&gt; edge -&gt; Chain node edge -&gt; Chain node edge
+</span><a href="Data.Chain.html#appendTip"><span class="hs-identifier hs-var">appendTip</span></a></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120261"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120262"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-197"></span><span>    </span><span class="annot"><span class="hs-identifier hs-var">apply</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#CollapseNode"><span class="hs-identifier hs-type">CollapseNode</span></a></span><span> </span><span id="local-6989586621679120263"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120263"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">node -&gt; Chain node edge -&gt; Chain node edge
+forall node edge.
+(Ord node, Semigroup edge) =&gt;
+node -&gt; Chain node edge -&gt; Chain node edge
+</span><a href="Data.Chain.html#collapseNode"><span class="hs-identifier hs-var">collapseNode</span></a></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120263"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-198"></span><span>    </span><span class="annot"><span class="hs-identifier hs-var">apply</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#RollbackTo"><span class="hs-identifier hs-type">RollbackTo</span></a></span><span> </span><span id="local-6989586621679120264"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120264"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">node -&gt; Chain node edge -&gt; Chain node edge
+forall node edge.
+Ord node =&gt;
+node -&gt; Chain node edge -&gt; Chain node edge
+</span><a href="Data.Chain.html#rollbackTo"><span class="hs-identifier hs-var">rollbackTo</span></a></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120264"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-199"></span><span>
+</span><span id="line-200"></span><span class="annot"><span class="hs-comment">-- | Append a new tip to the chain.</span></span><span>
+</span><span id="line-201"></span><span id="local-6989586621679119960"><span id="local-6989586621679119961"><span class="annot"><a href="Data.Chain.html#appendTip"><span class="hs-identifier hs-type">appendTip</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679119960"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679119960"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679119961"><span class="hs-identifier hs-type">edge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119960"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119961"><span class="hs-identifier hs-type">edge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119960"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119961"><span class="hs-identifier hs-type">edge</span></a></span></span></span><span>
+</span><span id="line-202"></span><span id="appendTip"><span class="annot"><span class="annottext">appendTip :: forall node edge.
+Ord node =&gt;
+node -&gt; edge -&gt; Chain node edge -&gt; Chain node edge
+</span><a href="Data.Chain.html#appendTip"><span class="hs-identifier hs-var hs-var">appendTip</span></a></span></span><span> </span><span id="local-6989586621679120268"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120268"><span class="hs-identifier hs-var">new</span></a></span></span><span> </span><span id="local-6989586621679120269"><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120269"><span class="hs-identifier hs-var">edge</span></a></span></span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span class="hs-special">{</span><span id="local-6989586621679120270"><span class="annot"><span class="annottext">Map node (edge, node)
+next :: forall node edge. Chain node edge -&gt; Map node (edge, node)
+next :: Map node (edge, node)
+</span><a href="Data.Chain.html#next"><span class="hs-identifier hs-var hs-var">next</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120271"><span class="annot"><span class="annottext">Map node (Maybe node)
+prev :: forall node edge. Chain node edge -&gt; Map node (Maybe node)
+prev :: Map node (Maybe node)
+</span><a href="Data.Chain.html#prev"><span class="hs-identifier hs-var hs-var">prev</span></a></span></span><span class="hs-special">,</span><span class="annot"><span class="annottext">tip :: forall node edge. Chain node edge -&gt; node
+</span><a href="Data.Chain.html#tip"><span class="hs-identifier hs-var">tip</span></a></span><span class="hs-glyph">=</span><span id="local-6989586621679120272"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120272"><span class="hs-identifier hs-var">old</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span>
+</span><span id="line-203"></span><span>    </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">next :: Map node (edge, node)
+</span><a href="Data.Chain.html#next"><span class="hs-identifier hs-var">next</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">node
+-&gt; (edge, node) -&gt; Map node (edge, node) -&gt; Map node (edge, node)
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120272"><span class="hs-identifier hs-var">old</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120269"><span class="hs-identifier hs-var">edge</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120268"><span class="hs-identifier hs-var">new</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map node (edge, node)
+</span><a href="#local-6989586621679120270"><span class="hs-identifier hs-var">next</span></a></span><span>
+</span><span id="line-204"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">prev :: Map node (Maybe node)
+</span><a href="Data.Chain.html#prev"><span class="hs-identifier hs-var">prev</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">node
+-&gt; Maybe node -&gt; Map node (Maybe node) -&gt; Map node (Maybe node)
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120268"><span class="hs-identifier hs-var">new</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">node -&gt; Maybe node
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120272"><span class="hs-identifier hs-var">old</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map node (Maybe node)
+</span><a href="#local-6989586621679120271"><span class="hs-identifier hs-var">prev</span></a></span><span>
+</span><span id="line-205"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">tip :: node
+</span><a href="Data.Chain.html#tip"><span class="hs-identifier hs-var">tip</span></a></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120268"><span class="hs-identifier hs-var">new</span></a></span><span>
+</span><span id="line-206"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-207"></span><span>
+</span><span id="line-208"></span><span class="hs-comment">-- | Remove the given @node@ and combine the incoming and outgoing edges.</span><span>
+</span><span id="line-209"></span><span class="hs-comment">-- Do nothing if the node is at the tip, or at the bottom,</span><span>
+</span><span id="line-210"></span><span class="hs-comment">-- or not in the chain at all.</span><span>
+</span><span id="line-211"></span><span id="local-6989586621679119962"><span id="local-6989586621679119963"><span class="annot"><a href="Data.Chain.html#collapseNode"><span class="hs-identifier hs-type">collapseNode</span></a></span><span>
+</span><span id="line-212"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679119962"><span class="hs-identifier hs-type">node</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679119963"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-213"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679119962"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119962"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119963"><span class="hs-identifier hs-type">edge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119962"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119963"><span class="hs-identifier hs-type">edge</span></a></span></span></span><span>
+</span><span id="line-214"></span><span id="collapseNode"><span class="annot"><span class="annottext">collapseNode :: forall node edge.
+(Ord node, Semigroup edge) =&gt;
+node -&gt; Chain node edge -&gt; Chain node edge
+</span><a href="Data.Chain.html#collapseNode"><span class="hs-identifier hs-var hs-var">collapseNode</span></a></span></span><span> </span><span id="local-6989586621679120282"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120282"><span class="hs-identifier hs-var">now</span></a></span></span><span> </span><span id="local-6989586621679120283"><span class="annot"><span class="annottext">chain :: Chain node edge
+</span><a href="#local-6989586621679120283"><span class="hs-identifier hs-var">chain</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span class="hs-special">{</span><span id="local-6989586621679120284"><span class="annot"><span class="annottext">Map node (edge, node)
+next :: forall node edge. Chain node edge -&gt; Map node (edge, node)
+next :: Map node (edge, node)
+</span><a href="Data.Chain.html#next"><span class="hs-identifier hs-var hs-var">next</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120285"><span class="annot"><span class="annottext">Map node (Maybe node)
+prev :: forall node edge. Chain node edge -&gt; Map node (Maybe node)
+prev :: Map node (Maybe node)
+</span><a href="Data.Chain.html#prev"><span class="hs-identifier hs-var hs-var">prev</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-215"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">node -&gt; Chain node edge -&gt; Maybe (ChainContext node edge)
+forall node edge.
+Ord node =&gt;
+node -&gt; Chain node edge -&gt; Maybe (ChainContext node edge)
+</span><a href="Data.Chain.html#lookup"><span class="hs-identifier hs-var">lookup</span></a></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120282"><span class="hs-identifier hs-var">now</span></a></span><span> </span><span class="annot"><span class="annottext">Chain node edge
+</span><a href="#local-6989586621679120283"><span class="hs-identifier hs-var">chain</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-216"></span><span>        </span><span class="hs-comment">-- Chain:   nto &lt;--eto-- now &lt;--efrom-- nfrom</span><span>
+</span><span id="line-217"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">to :: forall node edge. Edge node edge -&gt; node
+</span><a href="Data.Chain.html#to"><span class="hs-identifier hs-var">to</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120286"><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120286"><span class="hs-identifier hs-var">eto</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120287"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120287"><span class="hs-identifier hs-var">nto</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">from :: forall node edge. Edge node edge -&gt; node
+</span><a href="Data.Chain.html#from"><span class="hs-identifier hs-var">from</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120288"><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120288"><span class="hs-identifier hs-var">efrom</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120289"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120289"><span class="hs-identifier hs-var">nfrom</span></a></span></span><span class="hs-special">)</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Chain node edge
+</span><a href="#local-6989586621679120283"><span class="hs-identifier hs-var">chain</span></a></span><span>
+</span><span id="line-218"></span><span>            </span><span class="hs-special">{</span><span> </span><span class="annot"><a href="Data.Chain.html#next"><span class="hs-identifier hs-var">next</span></a></span><span>
+</span><span id="line-219"></span><span>                </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map.insert</span></span><span> </span><span class="annot"><a href="#local-6989586621679120289"><span class="hs-identifier hs-type">nfrom</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679120286"><span class="hs-identifier hs-type">eto</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">&lt;&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621679120288"><span class="hs-identifier hs-type">efrom</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679120287"><span class="hs-identifier hs-type">nto</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-220"></span><span>                </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map.delete</span></span><span> </span><span class="annot"><a href="#local-6989586621679120282"><span class="hs-identifier hs-type">now</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120284"><span class="hs-identifier hs-type">next</span></a></span><span>
+</span><span id="line-221"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#prev"><span class="hs-identifier hs-var">prev</span></a></span><span>
+</span><span id="line-222"></span><span>                </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map.insert</span></span><span> </span><span class="annot"><a href="#local-6989586621679120287"><span class="hs-identifier hs-type">nto</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><a href="#local-6989586621679120289"><span class="hs-identifier hs-type">nfrom</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-223"></span><span>                </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map.delete</span></span><span> </span><span class="annot"><a href="#local-6989586621679120282"><span class="hs-identifier hs-type">now</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120285"><span class="hs-identifier hs-type">prev</span></a></span><span>
+</span><span id="line-224"></span><span>            </span><span class="hs-special">}</span><span>
+</span><span id="line-225"></span><span>        </span><span class="annot"><span class="annottext">Maybe (ChainContext node edge)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Chain node edge
+</span><a href="#local-6989586621679120283"><span class="hs-identifier hs-var">chain</span></a></span><span>
+</span><span id="line-226"></span><span>
+</span><span id="line-227"></span><span class="hs-comment">-- | Remove the tip and more nodes from the chain until</span><span>
+</span><span id="line-228"></span><span class="hs-comment">-- the given node is the tip.</span><span>
+</span><span id="line-229"></span><span class="hs-comment">--</span><span>
+</span><span id="line-230"></span><span class="hs-comment">-- Do nothing if the node is not in the chain.</span><span>
+</span><span id="line-231"></span><span id="local-6989586621679119964"><span id="local-6989586621679119965"><span class="annot"><a href="Data.Chain.html#rollbackTo"><span class="hs-identifier hs-type">rollbackTo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679119964"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679119964"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119964"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119965"><span class="hs-identifier hs-type">edge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119964"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119965"><span class="hs-identifier hs-type">edge</span></a></span></span></span><span>
+</span><span id="line-232"></span><span id="rollbackTo"><span class="annot"><span class="annottext">rollbackTo :: forall node edge.
+Ord node =&gt;
+node -&gt; Chain node edge -&gt; Chain node edge
+</span><a href="Data.Chain.html#rollbackTo"><span class="hs-identifier hs-var hs-var">rollbackTo</span></a></span></span><span> </span><span id="local-6989586621679120306"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120306"><span class="hs-identifier hs-var">new</span></a></span></span><span> </span><span id="local-6989586621679120307"><span class="annot"><span class="annottext">chain :: Chain node edge
+</span><a href="#local-6989586621679120307"><span class="hs-identifier hs-var">chain</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span class="hs-special">{</span><span id="local-6989586621679120308"><span class="annot"><span class="annottext">Map node (edge, node)
+next :: forall node edge. Chain node edge -&gt; Map node (edge, node)
+next :: Map node (edge, node)
+</span><a href="Data.Chain.html#next"><span class="hs-identifier hs-var hs-var">next</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120309"><span class="annot"><span class="annottext">Map node (Maybe node)
+prev :: forall node edge. Chain node edge -&gt; Map node (Maybe node)
+prev :: Map node (Maybe node)
+</span><a href="Data.Chain.html#prev"><span class="hs-identifier hs-var hs-var">prev</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120310"><span class="annot"><span class="annottext">node
+tip :: forall node edge. Chain node edge -&gt; node
+tip :: node
+</span><a href="Data.Chain.html#tip"><span class="hs-identifier hs-var hs-var">tip</span></a></span></span><span class="hs-special">}</span><span>
+</span><span id="line-233"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120306"><span class="hs-identifier hs-var">new</span></a></span><span> </span><span class="annot"><span class="annottext">node -&gt; Chain node edge -&gt; Bool
+forall node edge. Ord node =&gt; node -&gt; Chain node edge -&gt; Bool
+</span><a href="Data.Chain.html#member"><span class="hs-operator hs-var">`member`</span></a></span><span> </span><span class="annot"><span class="annottext">Chain node edge
+</span><a href="#local-6989586621679120307"><span class="hs-identifier hs-var">chain</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span>
+</span><span id="line-234"></span><span>        </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">next :: Map node (edge, node)
+</span><a href="Data.Chain.html#next"><span class="hs-identifier hs-var">next</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[node] -&gt; Map node (edge, node) -&gt; Map node (edge, node)
+forall {t :: * -&gt; *} {a} {a}.
+(Foldable t, Ord a) =&gt;
+t a -&gt; Map a a -&gt; Map a a
+</span><a href="#local-6989586621679120311"><span class="hs-identifier hs-var">deleteAll</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120306"><span class="hs-identifier hs-var">new</span></a></span><span class="annot"><span class="annottext">node -&gt; [node] -&gt; [node]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span class="annot"><span class="annottext">[node]
+</span><a href="#local-6989586621679120312"><span class="hs-identifier hs-var">deletions</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map node (edge, node)
+</span><a href="#local-6989586621679120308"><span class="hs-identifier hs-var">next</span></a></span><span>
+</span><span id="line-235"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">prev :: Map node (Maybe node)
+</span><a href="Data.Chain.html#prev"><span class="hs-identifier hs-var">prev</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[node] -&gt; Map node (Maybe node) -&gt; Map node (Maybe node)
+forall {t :: * -&gt; *} {a} {a}.
+(Foldable t, Ord a) =&gt;
+t a -&gt; Map a a -&gt; Map a a
+</span><a href="#local-6989586621679120311"><span class="hs-identifier hs-var">deleteAll</span></a></span><span> </span><span class="annot"><span class="annottext">[node]
+</span><a href="#local-6989586621679120312"><span class="hs-identifier hs-var">deletions</span></a></span><span> </span><span class="annot"><span class="annottext">Map node (Maybe node)
+</span><a href="#local-6989586621679120309"><span class="hs-identifier hs-var">prev</span></a></span><span>
+</span><span id="line-236"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">tip :: node
+</span><a href="Data.Chain.html#tip"><span class="hs-identifier hs-var">tip</span></a></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120306"><span class="hs-identifier hs-var">new</span></a></span><span>
+</span><span id="line-237"></span><span>        </span><span class="hs-special">}</span><span>
+</span><span id="line-238"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Chain node edge
+</span><a href="#local-6989586621679120307"><span class="hs-identifier hs-var">chain</span></a></span><span>
+</span><span id="line-239"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-240"></span><span>    </span><span id="local-6989586621679120311"><span class="annot"><span class="annottext">deleteAll :: t a -&gt; Map a a -&gt; Map a a
+</span><a href="#local-6989586621679120311"><span class="hs-identifier hs-var hs-var">deleteAll</span></a></span></span><span> </span><span id="local-6989586621679120319"><span class="annot"><span class="annottext">t a
+</span><a href="#local-6989586621679120319"><span class="hs-identifier hs-var">dels</span></a></span></span><span> </span><span id="local-6989586621679120320"><span class="annot"><span class="annottext">Map a a
+</span><a href="#local-6989586621679120320"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; Map a a -&gt; Map a a) -&gt; Map a a -&gt; t a -&gt; Map a a
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
+forall (t :: * -&gt; *) a b.
+Foldable t =&gt;
+(a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; Map a a -&gt; Map a a
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.delete</span></span><span> </span><span class="annot"><span class="annottext">Map a a
+</span><a href="#local-6989586621679120320"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">t a
+</span><a href="#local-6989586621679120319"><span class="hs-identifier hs-var">dels</span></a></span><span>
+</span><span id="line-241"></span><span>    </span><span id="local-6989586621679120312"><span class="annot"><span class="annottext">deletions :: [node]
+</span><a href="#local-6989586621679120312"><span class="hs-identifier hs-var hs-var">deletions</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(node -&gt; Maybe (node, node)) -&gt; node -&gt; [node]
+forall b a. (b -&gt; Maybe (a, b)) -&gt; b -&gt; [a]
+</span><span class="hs-identifier hs-var">unfoldr</span></span><span> </span><span class="annot"><span class="annottext">node -&gt; Maybe (node, node)
+</span><a href="#local-6989586621679120321"><span class="hs-identifier hs-var">backwards</span></a></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120310"><span class="hs-identifier hs-var">tip</span></a></span><span>
+</span><span id="line-242"></span><span>    </span><span id="local-6989586621679120321"><span class="annot"><span class="annottext">backwards :: node -&gt; Maybe (node, node)
+</span><a href="#local-6989586621679120321"><span class="hs-identifier hs-var hs-var">backwards</span></a></span></span><span> </span><span id="local-6989586621679120322"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120322"><span class="hs-identifier hs-var">now</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-243"></span><span>        </span><span class="annot"><span class="annottext">Bool -&gt; Maybe ()
+forall (f :: * -&gt; *). Alternative f =&gt; Bool -&gt; f ()
+</span><span class="hs-identifier hs-var">guard</span></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Maybe ()) -&gt; Bool -&gt; Maybe ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120306"><span class="hs-identifier hs-var">new</span></a></span><span> </span><span class="annot"><span class="annottext">node -&gt; node -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120322"><span class="hs-identifier hs-var">now</span></a></span><span>
+</span><span id="line-244"></span><span>        </span><span id="local-6989586621679120324"><span class="annot"><a href="#local-6989586621679120324"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe (Maybe node) -&gt; Maybe node
+forall (m :: * -&gt; *) a. Monad m =&gt; m (m a) -&gt; m a
+</span><span class="hs-identifier hs-var">join</span></span><span> </span><span class="annot"><span class="annottext">(Maybe (Maybe node) -&gt; Maybe node)
+-&gt; Maybe (Maybe node) -&gt; Maybe node
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">node -&gt; Map node (Maybe node) -&gt; Maybe (Maybe node)
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120322"><span class="hs-identifier hs-var">now</span></a></span><span> </span><span class="annot"><span class="annottext">Map node (Maybe node)
+</span><a href="#local-6989586621679120309"><span class="hs-identifier hs-var">prev</span></a></span><span>
+</span><span id="line-245"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679120322"><span class="hs-identifier hs-type">now</span></a></span><span class="hs-special">,</span><span class="annot"><a href="#local-6989586621679120324"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-246"></span><span>
+</span><span id="line-247"></span><span class="hs-comment">-- | Helper: Add a single edge to a 'Chain' if possible.</span><span>
+</span><span id="line-248"></span><span class="hs-comment">-- The chain may contain gaps while adding edges.</span><span>
+</span><span id="line-249"></span><span id="local-6989586621679119929"><span id="local-6989586621679119930"><span class="annot"><a href="Data.Chain.html#addEdge"><span class="hs-identifier hs-type">addEdge</span></a></span><span>
+</span><span id="line-250"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679119929"><span class="hs-identifier hs-type">node</span></a></span><span>
+</span><span id="line-251"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119929"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119930"><span class="hs-identifier hs-type">edge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119929"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679119930"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119929"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679119930"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-252"></span><span id="addEdge"><span class="annot"><span class="annottext">addEdge :: forall node edge.
+Ord node =&gt;
+Edge node edge -&gt; Chain node [edge] -&gt; Maybe (Chain node [edge])
+</span><a href="Data.Chain.html#addEdge"><span class="hs-identifier hs-var hs-var">addEdge</span></a></span></span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span id="local-6989586621679120338"><span class="annot"><span class="annottext">node
+from :: forall node edge. Edge node edge -&gt; node
+from :: node
+</span><a href="Data.Chain.html#from"><span class="hs-identifier hs-var hs-var">from</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120339"><span class="annot"><span class="annottext">node
+to :: forall node edge. Edge node edge -&gt; node
+to :: node
+</span><a href="Data.Chain.html#to"><span class="hs-identifier hs-var hs-var">to</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120340"><span class="annot"><span class="annottext">edge
+via :: forall node edge. Edge node edge -&gt; edge
+via :: edge
+</span><a href="Data.Chain.html#via"><span class="hs-keyword hs-var hs-var">via</span></a></span></span><span class="hs-special">}</span><span> </span><span id="local-6989586621679120341"><span class="annot"><span class="annottext">chain :: Chain node [edge]
+</span><a href="#local-6989586621679120341"><span class="hs-identifier hs-var">chain</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span class="hs-special">{</span><span id="local-6989586621679120342"><span class="annot"><span class="annottext">Map node ([edge], node)
+next :: forall node edge. Chain node edge -&gt; Map node (edge, node)
+next :: Map node ([edge], node)
+</span><a href="Data.Chain.html#next"><span class="hs-identifier hs-var hs-var">next</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120343"><span class="annot"><span class="annottext">Map node (Maybe node)
+prev :: forall node edge. Chain node edge -&gt; Map node (Maybe node)
+prev :: Map node (Maybe node)
+</span><a href="Data.Chain.html#prev"><span class="hs-identifier hs-var hs-var">prev</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120344"><span class="annot"><span class="annottext">node
+tip :: forall node edge. Chain node edge -&gt; node
+tip :: node
+</span><a href="Data.Chain.html#tip"><span class="hs-identifier hs-var hs-var">tip</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-253"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">node -&gt; Map node ([edge], node) -&gt; Maybe ([edge], node)
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120338"><span class="hs-identifier hs-var">from</span></a></span><span> </span><span class="annot"><span class="annottext">Map node ([edge], node)
+</span><a href="#local-6989586621679120342"><span class="hs-identifier hs-var">next</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-254"></span><span>        </span><span class="hs-comment">-- A connection from-&gt;to' already exists,</span><span>
+</span><span id="line-255"></span><span>        </span><span class="hs-comment">-- add the edge if this has the same destination.</span><span>
+</span><span id="line-256"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120345"><span class="annot"><span class="annottext">[edge]
+</span><a href="#local-6989586621679120345"><span class="hs-identifier hs-var">es</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120346"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120346"><span class="hs-identifier hs-var">to'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-257"></span><span>            </span><span class="annot"><span class="annottext">Bool -&gt; Maybe ()
+forall (f :: * -&gt; *). Alternative f =&gt; Bool -&gt; f ()
+</span><span class="hs-identifier hs-var">guard</span></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Maybe ()) -&gt; Bool -&gt; Maybe ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120339"><span class="hs-identifier hs-var">to</span></a></span><span> </span><span class="annot"><span class="annottext">node -&gt; node -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120346"><span class="hs-identifier hs-var">to'</span></a></span><span>
+</span><span id="line-258"></span><span>            </span><span class="annot"><span class="annottext">Chain node [edge] -&gt; Maybe (Chain node [edge])
+forall a. a -&gt; Maybe a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Chain node [edge] -&gt; Maybe (Chain node [edge]))
+-&gt; Chain node [edge] -&gt; Maybe (Chain node [edge])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Chain node [edge]
+</span><a href="#local-6989586621679120341"><span class="hs-identifier hs-var">chain</span></a></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><a href="Data.Chain.html#next"><span class="hs-identifier hs-var">next</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map.insert</span></span><span> </span><span class="annot"><a href="#local-6989586621679120338"><span class="hs-identifier hs-type">from</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679120340"><span class="hs-keyword hs-type">via</span></a></span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span class="annot"><a href="#local-6989586621679120345"><span class="hs-identifier hs-type">es</span></a></span><span class="hs-special">,</span><span class="annot"><a href="#local-6989586621679120339"><span class="hs-identifier hs-type">to</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679120342"><span class="hs-identifier hs-type">next</span></a></span><span> </span><span class="hs-special">}</span><span>
+</span><span id="line-259"></span><span>        </span><span class="hs-comment">-- No connection exists, create one.</span><span>
+</span><span id="line-260"></span><span>        </span><span class="annot"><span class="annottext">Maybe ([edge], node)
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Chain node [edge] -&gt; Maybe (Chain node [edge])
+forall a. a -&gt; Maybe a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Chain node [edge] -&gt; Maybe (Chain node [edge]))
+-&gt; Chain node [edge] -&gt; Maybe (Chain node [edge])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Chain node [edge]
+</span><a href="#local-6989586621679120341"><span class="hs-identifier hs-var">chain</span></a></span><span>
+</span><span id="line-261"></span><span>            </span><span class="hs-special">{</span><span> </span><span class="annot"><a href="Data.Chain.html#next"><span class="hs-identifier hs-var">next</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map.insert</span></span><span> </span><span class="annot"><a href="#local-6989586621679120338"><span class="hs-identifier hs-type">from</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679120340"><span class="hs-keyword hs-type">via</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679120339"><span class="hs-identifier hs-type">to</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679120342"><span class="hs-identifier hs-type">next</span></a></span><span>
+</span><span id="line-262"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#prev"><span class="hs-identifier hs-var">prev</span></a></span><span>
+</span><span id="line-263"></span><span>                </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map.insert</span></span><span> </span><span class="annot"><a href="#local-6989586621679120339"><span class="hs-identifier hs-type">to</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><a href="#local-6989586621679120338"><span class="hs-identifier hs-type">from</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-264"></span><span>                </span><span class="annot"><span class="hs-operator hs-type">.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map.insertWith</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679120348"><span class="annot"><span class="annottext">Maybe node
+</span><a href="#local-6989586621679120348"><span class="hs-identifier hs-var">_new</span></a></span></span><span> </span><span id="local-6989586621679120349"><span class="annot"><span class="annottext">Maybe node
+</span><a href="#local-6989586621679120349"><span class="hs-identifier hs-var">old</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe node
+</span><a href="#local-6989586621679120349"><span class="hs-identifier hs-var">old</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679120338"><span class="hs-identifier hs-type">from</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Nothing</span></span><span>
+</span><span id="line-265"></span><span>                </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="#local-6989586621679120343"><span class="hs-identifier hs-type">prev</span></a></span><span>
+</span><span id="line-266"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Chain.html#tip"><span class="hs-identifier hs-var">tip</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><a href="#local-6989586621679120338"><span class="hs-identifier hs-type">from</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">==</span></span><span> </span><span class="annot"><a href="#local-6989586621679120344"><span class="hs-identifier hs-type">tip</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><a href="#local-6989586621679120339"><span class="hs-identifier hs-type">to</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><a href="#local-6989586621679120344"><span class="hs-identifier hs-type">tip</span></a></span><span>
+</span><span id="line-267"></span><span>            </span><span class="hs-special">}</span><span>
+</span><span id="line-268"></span><span>
+</span><span id="line-269"></span><span class="hs-comment">-- | Embed a 'Chain' into a table of 'Edge'.</span><span>
+</span><span id="line-270"></span><span class="hs-comment">--</span><span>
+</span><span id="line-271"></span><span class="hs-comment">-- The first and second argument specify how the edge labels</span><span>
+</span><span id="line-272"></span><span class="hs-comment">-- are to be mapped to and from sets of table rows.</span><span>
+</span><span id="line-273"></span><span class="hs-comment">-- Importantly, we may not assume that the table stores</span><span>
+</span><span id="line-274"></span><span class="hs-comment">-- the rows in any particular order.</span><span>
+</span><span id="line-275"></span><span id="local-6989586621679119988"><span id="local-6989586621679119989"><span id="local-6989586621679119990"><span class="annot"><a href="Data.Chain.html#chainIntoTable"><span class="hs-identifier hs-type">chainIntoTable</span></a></span><span>
+</span><span id="line-276"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679119988"><span class="hs-identifier hs-type">node</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679119989"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-277"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679119989"><span class="hs-identifier hs-type">edge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Table.html#Pile"><span class="hs-identifier hs-type">Pile</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119990"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Table.html#Pile"><span class="hs-identifier hs-type">Pile</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119990"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679119989"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-278"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Embedding</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#DeltaChain"><span class="hs-identifier hs-type">DeltaChain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119988"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119989"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Data.Table.html#DeltaTable"><span class="hs-identifier hs-type">DeltaTable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119988"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119990"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span></span></span></span><span>
+</span><span id="line-279"></span><span id="chainIntoTable"><span class="annot"><span class="annottext">chainIntoTable :: forall node edge e.
+(Ord node, Semigroup edge) =&gt;
+(edge -&gt; Pile e)
+-&gt; (Pile e -&gt; edge)
+-&gt; Embedding (DeltaChain node edge) [DeltaTable (Edge node e)]
+</span><a href="Data.Chain.html#chainIntoTable"><span class="hs-identifier hs-var hs-var">chainIntoTable</span></a></span></span><span> </span><span id="local-6989586621679120381"><span class="annot"><span class="annottext">edge -&gt; Pile e
+</span><a href="#local-6989586621679120381"><span class="hs-identifier hs-var">toPile</span></a></span></span><span> </span><span id="local-6989586621679120382"><span class="annot"><span class="annottext">Pile e -&gt; edge
+</span><a href="#local-6989586621679120382"><span class="hs-identifier hs-var">fromPile</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Embedding' (DeltaChain node edge) [DeltaTable (Edge node e)]
+-&gt; Embedding (DeltaChain node edge) [DeltaTable (Edge node e)]
+forall da db. Embedding' da db -&gt; Embedding da db
+</span><span class="hs-identifier hs-var">mkEmbedding</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Embedding'</span></span><span class="hs-special">{</span><span class="annot"><span class="annottext">Table (Edge node e) -&gt; Either SomeException (Chain node edge)
+load :: Table (Edge node e) -&gt; Either SomeException (Chain node edge)
+load :: Table (Edge node e) -&gt; Either SomeException (Chain node edge)
+</span><a href="#local-6989586621679120384"><span class="hs-identifier hs-var hs-var">load</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">Chain node edge -&gt; Table (Edge node e)
+write :: Chain node edge -&gt; Table (Edge node e)
+write :: Chain node edge -&gt; Table (Edge node e)
+</span><a href="#local-6989586621679120386"><span class="hs-identifier hs-var hs-var">write</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">Chain node edge
+-&gt; Table (Edge node e)
+-&gt; DeltaChain node edge
+-&gt; [DeltaTable (Edge node e)]
+update :: Chain node edge
+-&gt; Table (Edge node e)
+-&gt; DeltaChain node edge
+-&gt; [DeltaTable (Edge node e)]
+update :: Chain node edge
+-&gt; Table (Edge node e)
+-&gt; DeltaChain node edge
+-&gt; [DeltaTable (Edge node e)]
+</span><a href="#local-6989586621679120388"><span class="hs-identifier hs-var hs-var">update</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-280"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-281"></span><span>    </span><span id="local-6989586621679120384"><span class="annot"><span class="annottext">load :: Table (Edge node e) -&gt; Either SomeException (Chain node edge)
+</span><a href="#local-6989586621679120384"><span class="hs-identifier hs-var hs-var">load</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (Chain node edge) -&gt; Either SomeException (Chain node edge)
+forall {b}. Maybe b -&gt; Either SomeException b
+</span><a href="#local-6989586621679120390"><span class="hs-identifier hs-var">toEither</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (Chain node edge) -&gt; Either SomeException (Chain node edge))
+-&gt; (Table (Edge node e) -&gt; Maybe (Chain node edge))
+-&gt; Table (Edge node e)
+-&gt; Either SomeException (Chain node edge)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(Chain node [e] -&gt; Chain node edge)
+-&gt; Maybe (Chain node [e]) -&gt; Maybe (Chain node edge)
+forall a b. (a -&gt; b) -&gt; Maybe a -&gt; Maybe b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">([e] -&gt; edge) -&gt; Chain node [e] -&gt; Chain node edge
+forall a b. (a -&gt; b) -&gt; Chain node a -&gt; Chain node b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">(([e] -&gt; edge) -&gt; Chain node [e] -&gt; Chain node edge)
+-&gt; ([e] -&gt; edge) -&gt; Chain node [e] -&gt; Chain node edge
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Pile e -&gt; edge
+</span><a href="#local-6989586621679120382"><span class="hs-identifier hs-var">fromPile</span></a></span><span> </span><span class="annot"><span class="annottext">(Pile e -&gt; edge) -&gt; ([e] -&gt; Pile e) -&gt; [e] -&gt; edge
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">[e] -&gt; Pile e
+forall a. [a] -&gt; Pile a
+</span><a href="Data.Table.html#Pile"><span class="hs-identifier hs-var">Pile</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-282"></span><span>        </span><span class="annot"><span class="annottext">(Maybe (Chain node [e]) -&gt; Maybe (Chain node edge))
+-&gt; (Table (Edge node e) -&gt; Maybe (Chain node [e]))
+-&gt; Table (Edge node e)
+-&gt; Maybe (Chain node edge)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">[Edge node e] -&gt; Maybe (Chain node [e])
+forall node edge.
+Ord node =&gt;
+[Edge node edge] -&gt; Maybe (Chain node [edge])
+</span><a href="Data.Chain.html#fromEdges"><span class="hs-identifier hs-var">fromEdges</span></a></span><span> </span><span class="annot"><span class="annottext">([Edge node e] -&gt; Maybe (Chain node [e]))
+-&gt; (Table (Edge node e) -&gt; [Edge node e])
+-&gt; Table (Edge node e)
+-&gt; Maybe (Chain node [e])
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Pile (Edge node e) -&gt; [Edge node e]
+forall a. Pile a -&gt; [a]
+</span><a href="Data.Table.html#getPile"><span class="hs-identifier hs-var">getPile</span></a></span><span> </span><span class="annot"><span class="annottext">(Pile (Edge node e) -&gt; [Edge node e])
+-&gt; (Table (Edge node e) -&gt; Pile (Edge node e))
+-&gt; Table (Edge node e)
+-&gt; [Edge node e]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Table (Edge node e) -&gt; Pile (Edge node e)
+forall row. Table row -&gt; Pile row
+</span><a href="Data.Table.html#toPile"><span class="hs-identifier hs-var">Table.toPile</span></a></span><span>
+</span><span id="line-283"></span><span>      </span><span class="hs-keyword">where</span><span>
+</span><span id="line-284"></span><span>        </span><span id="local-6989586621679120390"><span class="annot"><span class="annottext">toEither :: Maybe b -&gt; Either SomeException b
+</span><a href="#local-6989586621679120390"><span class="hs-identifier hs-var hs-var">toEither</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Either SomeException b
+-&gt; (b -&gt; Either SomeException b)
+-&gt; Maybe b
+-&gt; Either SomeException b
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SomeException -&gt; Either SomeException b
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="annottext">(SomeException -&gt; Either SomeException b)
+-&gt; SomeException -&gt; Either SomeException b
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ErrMalformedChainTable -&gt; SomeException
+forall e. Exception e =&gt; e -&gt; SomeException
+</span><span class="hs-identifier hs-var">toException</span></span><span> </span><span class="annot"><span class="annottext">ErrMalformedChainTable
+</span><a href="Data.Chain.html#ErrMalformedChainTable"><span class="hs-identifier hs-var">ErrMalformedChainTable</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; Either SomeException b
+forall a b. b -&gt; Either a b
+</span><span class="hs-identifier hs-var">Right</span></span><span>
+</span><span id="line-285"></span><span>
+</span><span id="line-286"></span><span>    </span><span id="local-6989586621679120386"><span class="annot"><span class="annottext">write :: Chain node edge -&gt; Table (Edge node e)
+</span><a href="#local-6989586621679120386"><span class="hs-identifier hs-var hs-var">write</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Edge node e] -&gt; Table (Edge node e)
+forall row. [row] -&gt; Table row
+</span><a href="Data.Table.html#fromList"><span class="hs-identifier hs-var">Table.fromList</span></a></span><span>
+</span><span id="line-287"></span><span>        </span><span class="annot"><span class="annottext">([Edge node e] -&gt; Table (Edge node e))
+-&gt; (Chain node edge -&gt; [Edge node e])
+-&gt; Chain node edge
+-&gt; Table (Edge node e)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(Edge node edge -&gt; [Edge node e])
+-&gt; [Edge node edge] -&gt; [Edge node e]
+forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
+</span><span class="hs-identifier hs-var">concatMap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Edge node [e] -&gt; [Edge node e]
+forall node edge. Edge node [edge] -&gt; [Edge node edge]
+</span><a href="Data.Chain.html#flattenEdge"><span class="hs-identifier hs-var">flattenEdge</span></a></span><span> </span><span class="annot"><span class="annottext">(Edge node [e] -&gt; [Edge node e])
+-&gt; (Edge node edge -&gt; Edge node [e])
+-&gt; Edge node edge
+-&gt; [Edge node e]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(edge -&gt; [e]) -&gt; Edge node edge -&gt; Edge node [e]
+forall a b. (a -&gt; b) -&gt; Edge node a -&gt; Edge node b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Pile e -&gt; [e]
+forall a. Pile a -&gt; [a]
+</span><a href="Data.Table.html#getPile"><span class="hs-identifier hs-var">getPile</span></a></span><span> </span><span class="annot"><span class="annottext">(Pile e -&gt; [e]) -&gt; (edge -&gt; Pile e) -&gt; edge -&gt; [e]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">edge -&gt; Pile e
+</span><a href="#local-6989586621679120381"><span class="hs-identifier hs-var">toPile</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([Edge node edge] -&gt; [Edge node e])
+-&gt; (Chain node edge -&gt; [Edge node edge])
+-&gt; Chain node edge
+-&gt; [Edge node e]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Chain node edge -&gt; [Edge node edge]
+forall node edge. Chain node edge -&gt; [Edge node edge]
+</span><a href="Data.Chain.html#toEdges"><span class="hs-identifier hs-var">toEdges</span></a></span><span>
+</span><span id="line-288"></span><span>
+</span><span id="line-289"></span><span>    </span><span id="local-6989586621679120388"><span class="annot"><span class="annottext">update :: Chain node edge
+-&gt; Table (Edge node e)
+-&gt; DeltaChain node edge
+-&gt; [DeltaTable (Edge node e)]
+</span><a href="#local-6989586621679120388"><span class="hs-identifier hs-var hs-var">update</span></a></span></span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">tip :: forall node edge. Chain node edge -&gt; node
+</span><a href="Data.Chain.html#tip"><span class="hs-identifier hs-var">tip</span></a></span><span class="hs-glyph">=</span><span id="local-6989586621679120400"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120400"><span class="hs-identifier hs-var">from</span></a></span></span><span class="hs-special">}</span><span> </span><span class="annot"><span class="annottext">Table (Edge node e)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#AppendTip"><span class="hs-identifier hs-type">AppendTip</span></a></span><span> </span><span id="local-6989586621679120401"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120401"><span class="hs-identifier hs-var">to</span></a></span></span><span> </span><span id="local-6989586621679120402"><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120402"><span class="hs-identifier hs-var">vias</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-290"></span><span>        </span><span class="hs-special">[</span><span class="annot"><span class="annottext">[Edge node e] -&gt; DeltaTable (Edge node e)
+forall row. [row] -&gt; DeltaTable row
+</span><a href="Data.Table.html#InsertMany"><span class="hs-identifier hs-var">InsertMany</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">node
+from :: node
+from :: node
+</span><a href="Data.Chain.html#from"><span class="hs-identifier hs-var hs-var">from</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">node
+to :: node
+to :: node
+</span><a href="Data.Chain.html#to"><span class="hs-identifier hs-var hs-var">to</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">e
+via :: e
+via :: e
+</span><a href="Data.Chain.html#via"><span class="hs-keyword hs-var hs-var">via</span></a></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679120404"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679120404"><span class="hs-keyword hs-var">via</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Pile e -&gt; [e]
+forall a. Pile a -&gt; [a]
+</span><a href="Data.Table.html#getPile"><span class="hs-identifier hs-var">getPile</span></a></span><span> </span><span class="annot"><span class="annottext">(Pile e -&gt; [e]) -&gt; Pile e -&gt; [e]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">edge -&gt; Pile e
+</span><a href="#local-6989586621679120381"><span class="hs-identifier hs-var">toPile</span></a></span><span> </span><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120402"><span class="hs-identifier hs-var">vias</span></a></span><span class="hs-special">]</span><span class="hs-special">]</span><span>
+</span><span id="line-291"></span><span>    </span><span class="annot"><a href="#local-6989586621679120388"><span class="hs-identifier hs-var">update</span></a></span><span> </span><span class="annot"><a href="Data.Chain.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span class="hs-special">{</span><span id="local-6989586621679120405"><span class="annot"><span class="annottext">node
+tip :: forall node edge. Chain node edge -&gt; node
+tip :: node
+</span><a href="Data.Chain.html#tip"><span class="hs-identifier hs-var hs-var">tip</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120406"><span class="annot"><span class="annottext">Map node (Maybe node)
+prev :: forall node edge. Chain node edge -&gt; Map node (Maybe node)
+prev :: Map node (Maybe node)
+</span><a href="Data.Chain.html#prev"><span class="hs-identifier hs-var hs-var">prev</span></a></span></span><span class="hs-special">}</span><span> </span><span class="annot"><span class="annottext">Table (Edge node e)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#RollbackTo"><span class="hs-identifier hs-type">RollbackTo</span></a></span><span> </span><span id="local-6989586621679120407"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120407"><span class="hs-identifier hs-var">node</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-292"></span><span>        </span><span class="hs-special">[</span><span class="annot"><span class="annottext">(Edge node e -&gt; Bool) -&gt; DeltaTable (Edge node e)
+forall row. (row -&gt; Bool) -&gt; DeltaTable row
+</span><a href="Data.Table.html#DeleteWhere"><span class="hs-identifier hs-var">DeleteWhere</span></a></span><span> </span><span class="annot"><span class="annottext">((Edge node e -&gt; Bool) -&gt; DeltaTable (Edge node e))
+-&gt; (Edge node e -&gt; Bool) -&gt; DeltaTable (Edge node e)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span id="local-6989586621679120409"><span class="annot"><span class="annottext">node
+to :: forall node edge. Edge node edge -&gt; node
+to :: node
+</span><a href="Data.Chain.html#to"><span class="hs-identifier hs-var hs-var">to</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120409"><span class="hs-identifier hs-var">to</span></a></span><span> </span><span class="annot"><span class="annottext">node -&gt; [node] -&gt; Bool
+forall a. Eq a =&gt; a -&gt; [a] -&gt; Bool
+forall (t :: * -&gt; *) a. (Foldable t, Eq a) =&gt; a -&gt; t a -&gt; Bool
+</span><span class="hs-operator hs-var">`elem`</span></span><span> </span><span class="annot"><span class="annottext">[node]
+</span><a href="#local-6989586621679120411"><span class="hs-identifier hs-var">deletions</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-293"></span><span>      </span><span class="hs-keyword">where</span><span>
+</span><span id="line-294"></span><span>        </span><span id="local-6989586621679120411"><span class="annot"><span class="annottext">deletions :: [node]
+</span><a href="#local-6989586621679120411"><span class="hs-identifier hs-var hs-var">deletions</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(node -&gt; Maybe (node, node)) -&gt; node -&gt; [node]
+forall b a. (b -&gt; Maybe (a, b)) -&gt; b -&gt; [a]
+</span><span class="hs-identifier hs-var">unfoldr</span></span><span> </span><span class="annot"><span class="annottext">node -&gt; Maybe (node, node)
+</span><a href="#local-6989586621679120412"><span class="hs-identifier hs-var">backwards</span></a></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120405"><span class="hs-identifier hs-var">tip</span></a></span><span>
+</span><span id="line-295"></span><span>        </span><span id="local-6989586621679120412"><span class="annot"><span class="annottext">backwards :: node -&gt; Maybe (node, node)
+</span><a href="#local-6989586621679120412"><span class="hs-identifier hs-var hs-var">backwards</span></a></span></span><span> </span><span id="local-6989586621679120413"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120413"><span class="hs-identifier hs-var">now</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-296"></span><span>            </span><span class="annot"><span class="annottext">Bool -&gt; Maybe ()
+forall (f :: * -&gt; *). Alternative f =&gt; Bool -&gt; f ()
+</span><span class="hs-identifier hs-var">guard</span></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Maybe ()) -&gt; Bool -&gt; Maybe ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120407"><span class="hs-identifier hs-var">node</span></a></span><span> </span><span class="annot"><span class="annottext">node -&gt; node -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120413"><span class="hs-identifier hs-var">now</span></a></span><span>
+</span><span id="line-297"></span><span>            </span><span id="local-6989586621679120414"><span class="annot"><a href="#local-6989586621679120414"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe (Maybe node) -&gt; Maybe node
+forall (m :: * -&gt; *) a. Monad m =&gt; m (m a) -&gt; m a
+</span><span class="hs-identifier hs-var">join</span></span><span> </span><span class="annot"><span class="annottext">(Maybe (Maybe node) -&gt; Maybe node)
+-&gt; Maybe (Maybe node) -&gt; Maybe node
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">node -&gt; Map node (Maybe node) -&gt; Maybe (Maybe node)
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120413"><span class="hs-identifier hs-var">now</span></a></span><span> </span><span class="annot"><span class="annottext">Map node (Maybe node)
+</span><a href="#local-6989586621679120406"><span class="hs-identifier hs-var">prev</span></a></span><span>
+</span><span id="line-298"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679120413"><span class="hs-identifier hs-type">now</span></a></span><span class="hs-special">,</span><span class="annot"><a href="#local-6989586621679120414"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-299"></span><span>    </span><span class="annot"><a href="#local-6989586621679120388"><span class="hs-identifier hs-var">update</span></a></span><span> </span><span id="local-6989586621679120415"><span class="annot"><span class="annottext">Chain node edge
+</span><a href="#local-6989586621679120415"><span class="hs-identifier hs-var">chain</span></a></span></span><span> </span><span class="annot"><span class="annottext">Table (Edge node e)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#CollapseNode"><span class="hs-identifier hs-type">CollapseNode</span></a></span><span> </span><span id="local-6989586621679120416"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120416"><span class="hs-identifier hs-var">now</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">node -&gt; Chain node edge -&gt; Maybe (ChainContext node edge)
+forall node edge.
+Ord node =&gt;
+node -&gt; Chain node edge -&gt; Maybe (ChainContext node edge)
+</span><a href="Data.Chain.html#lookup"><span class="hs-identifier hs-var">lookup</span></a></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120416"><span class="hs-identifier hs-var">now</span></a></span><span> </span><span class="annot"><span class="annottext">Chain node edge
+</span><a href="#local-6989586621679120415"><span class="hs-identifier hs-var">chain</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-300"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">to :: forall node edge. Edge node edge -&gt; node
+</span><a href="Data.Chain.html#to"><span class="hs-identifier hs-var">to</span></a></span><span class="hs-glyph">=</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120417"><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120417"><span class="hs-identifier hs-var">eto</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120418"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120418"><span class="hs-identifier hs-var">nto</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">from :: forall node edge. Edge node edge -&gt; node
+</span><a href="Data.Chain.html#from"><span class="hs-identifier hs-var">from</span></a></span><span class="hs-glyph">=</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120419"><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120419"><span class="hs-identifier hs-var">efrom</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120420"><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120420"><span class="hs-identifier hs-var">nfrom</span></a></span></span><span class="hs-special">)</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-301"></span><span>            </span><span class="hs-comment">-- insert new edges</span><span>
+</span><span id="line-302"></span><span>            </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">[Edge node e] -&gt; DeltaTable (Edge node e)
+forall row. [row] -&gt; DeltaTable row
+</span><a href="Data.Table.html#InsertMany"><span class="hs-identifier hs-var">InsertMany</span></a></span><span>
+</span><span id="line-303"></span><span>                </span><span class="hs-special">[</span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">to :: node
+</span><a href="Data.Chain.html#to"><span class="hs-identifier hs-var">to</span></a></span><span class="hs-glyph">=</span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120418"><span class="hs-identifier hs-var">nto</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">from :: node
+</span><a href="Data.Chain.html#from"><span class="hs-identifier hs-var">from</span></a></span><span class="hs-glyph">=</span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120420"><span class="hs-identifier hs-var">nfrom</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">e
+via :: e
+via :: e
+</span><a href="Data.Chain.html#via"><span class="hs-keyword hs-var hs-var">via</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-304"></span><span>                </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679120421"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679120421"><span class="hs-keyword hs-var">via</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Pile e -&gt; [e]
+forall a. Pile a -&gt; [a]
+</span><a href="Data.Table.html#getPile"><span class="hs-identifier hs-var">getPile</span></a></span><span> </span><span class="annot"><span class="annottext">(Pile e -&gt; [e]) -&gt; Pile e -&gt; [e]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">edge -&gt; Pile e
+</span><a href="#local-6989586621679120381"><span class="hs-identifier hs-var">toPile</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120417"><span class="hs-identifier hs-var">eto</span></a></span><span> </span><span class="annot"><span class="annottext">edge -&gt; edge -&gt; edge
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120419"><span class="hs-identifier hs-var">efrom</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-305"></span><span>                </span><span class="hs-special">]</span><span>
+</span><span id="line-306"></span><span>            </span><span class="hs-comment">-- delete old edges</span><span>
+</span><span id="line-307"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Edge node e -&gt; Bool) -&gt; DeltaTable (Edge node e)
+forall row. (row -&gt; Bool) -&gt; DeltaTable row
+</span><a href="Data.Table.html#DeleteWhere"><span class="hs-identifier hs-var">DeleteWhere</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span id="local-6989586621679120422"><span class="annot"><span class="annottext">node
+to :: forall node edge. Edge node edge -&gt; node
+to :: node
+</span><a href="Data.Chain.html#to"><span class="hs-identifier hs-var hs-var">to</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120423"><span class="annot"><span class="annottext">node
+from :: forall node edge. Edge node edge -&gt; node
+from :: node
+</span><a href="Data.Chain.html#from"><span class="hs-identifier hs-var hs-var">from</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120422"><span class="hs-identifier hs-var">to</span></a></span><span> </span><span class="annot"><span class="annottext">node -&gt; node -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120416"><span class="hs-identifier hs-var">now</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120423"><span class="hs-identifier hs-var">from</span></a></span><span> </span><span class="annot"><span class="annottext">node -&gt; node -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">node
+</span><a href="#local-6989586621679120416"><span class="hs-identifier hs-var">now</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-308"></span><span>            </span><span class="hs-special">]</span><span>
+</span><span id="line-309"></span><span>        </span><span class="annot"><span class="annottext">Maybe (ChainContext node edge)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-310"></span><span>
+</span><span id="line-311"></span><span class="hs-keyword">data</span><span> </span><span id="ErrMalformedChainTable"><span class="annot"><a href="Data.Chain.html#ErrMalformedChainTable"><span class="hs-identifier hs-var">ErrMalformedChainTable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ErrMalformedChainTable"><span class="annot"><a href="Data.Chain.html#ErrMalformedChainTable"><span class="hs-identifier hs-var">ErrMalformedChainTable</span></a></span></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120426"><span id="local-6989586621679120428"><span class="annot"><span class="annottext">ErrMalformedChainTable -&gt; ErrMalformedChainTable -&gt; Bool
+(ErrMalformedChainTable -&gt; ErrMalformedChainTable -&gt; Bool)
+-&gt; (ErrMalformedChainTable -&gt; ErrMalformedChainTable -&gt; Bool)
+-&gt; Eq ErrMalformedChainTable
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: ErrMalformedChainTable -&gt; ErrMalformedChainTable -&gt; Bool
+== :: ErrMalformedChainTable -&gt; ErrMalformedChainTable -&gt; Bool
+$c/= :: ErrMalformedChainTable -&gt; ErrMalformedChainTable -&gt; Bool
+/= :: ErrMalformedChainTable -&gt; ErrMalformedChainTable -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120432"><span id="local-6989586621679120434"><span id="local-6989586621679120438"><span class="annot"><span class="annottext">Int -&gt; ErrMalformedChainTable -&gt; ShowS
+[ErrMalformedChainTable] -&gt; ShowS
+ErrMalformedChainTable -&gt; [Char]
+(Int -&gt; ErrMalformedChainTable -&gt; ShowS)
+-&gt; (ErrMalformedChainTable -&gt; [Char])
+-&gt; ([ErrMalformedChainTable] -&gt; ShowS)
+-&gt; Show ErrMalformedChainTable
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; [Char]) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; ErrMalformedChainTable -&gt; ShowS
+showsPrec :: Int -&gt; ErrMalformedChainTable -&gt; ShowS
+$cshow :: ErrMalformedChainTable -&gt; [Char]
+show :: ErrMalformedChainTable -&gt; [Char]
+$cshowList :: [ErrMalformedChainTable] -&gt; ShowS
+showList :: [ErrMalformedChainTable] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-312"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679120445"><span id="local-6989586621679120448"><span id="local-6989586621679120451"><span id="local-6989586621679120454"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Data.Chain.html#ErrMalformedChainTable"><span class="hs-identifier hs-type">ErrMalformedChainTable</span></a></span></span></span></span></span><span>
+</span><span id="line-313"></span><span>
+</span><span id="line-314"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    Tests
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-317"></span><span class="annot"><a href="Data.Chain.html#testChain"><span class="hs-identifier hs-type">testChain</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Table.html#Table"><span class="hs-identifier hs-type">Table</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><a href="Data.Table.html#DeltaDB"><span class="hs-identifier hs-type">Table.DeltaDB</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-318"></span><span id="testChain"><span class="annot"><span class="annottext">testChain :: (Table (Edge Int Char), [[DeltaDB Int (Edge Int Char)]])
+</span><a href="Data.Chain.html#testChain"><span class="hs-identifier hs-var hs-var">testChain</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Embedding (DeltaChain Int [Char]) [DeltaDB Int (Edge Int Char)]
+-&gt; [DeltaChain Int [Char]]
+-&gt; Base (DeltaChain Int [Char])
+-&gt; (Base [DeltaDB Int (Edge Int Char)],
+    [[DeltaDB Int (Edge Int Char)]])
+forall da db.
+Delta da =&gt;
+Embedding da db -&gt; [da] -&gt; Base da -&gt; (Base db, [db])
+</span><span class="hs-identifier hs-var">liftUpdates</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Embedding
+  [DeltaTable (Edge Int Char)] [DeltaDB Int (Edge Int Char)]
+forall row. Embedding [DeltaTable row] [DeltaDB Int row]
+</span><a href="Data.Table.html#tableIntoDatabase"><span class="hs-identifier hs-var">Table.tableIntoDatabase</span></a></span><span> </span><span class="annot"><span class="annottext">Embedding
+  [DeltaTable (Edge Int Char)] [DeltaDB Int (Edge Int Char)]
+-&gt; Embedding (DeltaChain Int [Char]) [DeltaTable (Edge Int Char)]
+-&gt; Embedding (DeltaChain Int [Char]) [DeltaDB Int (Edge Int Char)]
+forall j k1 i. Embedding j k1 -&gt; Embedding i j -&gt; Embedding i k1
+forall {k} (c :: k -&gt; k -&gt; *) (j :: k) (k1 :: k) (i :: k).
+Semigroupoid c =&gt;
+c j k1 -&gt; c i j -&gt; c i k1
+</span><span class="hs-operator hs-var">`o`</span></span><span> </span><span class="annot"><span class="annottext">([Char] -&gt; Pile Char)
+-&gt; (Pile Char -&gt; [Char])
+-&gt; Embedding (DeltaChain Int [Char]) [DeltaTable (Edge Int Char)]
+forall node edge e.
+(Ord node, Semigroup edge) =&gt;
+(edge -&gt; Pile e)
+-&gt; (Pile e -&gt; edge)
+-&gt; Embedding (DeltaChain node edge) [DeltaTable (Edge node e)]
+</span><a href="Data.Chain.html#chainIntoTable"><span class="hs-identifier hs-var">chainIntoTable</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Pile Char
+forall a. [a] -&gt; Pile a
+</span><a href="Data.Table.html#Pile"><span class="hs-identifier hs-var">Pile</span></a></span><span> </span><span class="annot"><span class="annottext">Pile Char -&gt; [Char]
+forall a. Pile a -&gt; [a]
+</span><a href="Data.Table.html#getPile"><span class="hs-identifier hs-var">getPile</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-319"></span><span>    </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int -&gt; DeltaChain Int [Char]
+forall node edge. node -&gt; DeltaChain node edge
+</span><a href="Data.Chain.html#CollapseNode"><span class="hs-identifier hs-var">CollapseNode</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int -&gt; DeltaChain Int [Char]
+forall node edge. node -&gt; DeltaChain node edge
+</span><a href="Data.Chain.html#CollapseNode"><span class="hs-identifier hs-var">CollapseNode</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">2</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Char] -&gt; DeltaChain Int [Char]
+forall node edge. node -&gt; edge -&gt; DeltaChain node edge
+</span><a href="Data.Chain.html#AppendTip"><span class="hs-identifier hs-var">AppendTip</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;c&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Char] -&gt; DeltaChain Int [Char]
+forall node edge. node -&gt; edge -&gt; DeltaChain node edge
+</span><a href="Data.Chain.html#AppendTip"><span class="hs-identifier hs-var">AppendTip</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;b&quot;</span></span><span class="hs-special">]</span><span>
+</span><span id="line-320"></span><span>    </span><span class="annot"><span class="annottext">(Base (DeltaChain Int [Char])
+ -&gt; (Base [DeltaDB Int (Edge Int Char)],
+     [[DeltaDB Int (Edge Int Char)]]))
+-&gt; Base (DeltaChain Int [Char])
+-&gt; (Base [DeltaDB Int (Edge Int Char)],
+    [[DeltaDB Int (Edge Int Char)]])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Edge Int [Char] -&gt; Chain Int [Char]
+forall node edge. Ord node =&gt; Edge node edge -&gt; Chain node edge
+</span><a href="Data.Chain.html#fromEdge"><span class="hs-identifier hs-var">fromEdge</span></a></span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">from :: Int
+</span><a href="Data.Chain.html#from"><span class="hs-identifier hs-var">from</span></a></span><span class="hs-glyph">=</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span class="hs-special">,</span><span class="annot"><span class="annottext">to :: Int
+</span><a href="Data.Chain.html#to"><span class="hs-identifier hs-var">to</span></a></span><span class="hs-glyph">=</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">,</span><span class="annot"><span class="annottext">via :: [Char]
+</span><a href="Data.Chain.html#via"><span class="hs-keyword hs-var">via</span></a></span><span class="hs-glyph">=</span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;a&quot;</span></span><span class="hs-special">}</span><span>
+</span><span id="line-321"></span><span>
+</span><span id="line-322"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    Edge
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-325"></span><span class="hs-comment">-- | Utility type that represents an 'Edge' in a graph:</span><span>
+</span><span id="line-326"></span><span class="hs-comment">-- it connects two @node@ via an @edge@ label.</span><span>
+</span><span id="line-327"></span><span class="hs-keyword">data</span><span> </span><span id="Edge"><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-var">Edge</span></a></span></span><span> </span><span id="local-6989586621679119903"><span class="annot"><a href="#local-6989586621679119903"><span class="hs-identifier hs-type">node</span></a></span></span><span> </span><span id="local-6989586621679119904"><span class="annot"><a href="#local-6989586621679119904"><span class="hs-identifier hs-type">edge</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Edge"><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-var">Edge</span></a></span></span><span>
+</span><span id="line-328"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="from"><span class="annot"><span class="annottext">forall node edge. Edge node edge -&gt; node
+</span><a href="Data.Chain.html#from"><span class="hs-identifier hs-var hs-var">from</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679119903"><span class="hs-identifier hs-type">node</span></a></span><span>
+</span><span id="line-329"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="to"><span class="annot"><span class="annottext">forall node edge. Edge node edge -&gt; node
+</span><a href="Data.Chain.html#to"><span class="hs-identifier hs-var hs-var">to</span></a></span></span><span>   </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679119903"><span class="hs-identifier hs-type">node</span></a></span><span>
+</span><span id="line-330"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="via"><span class="annot"><span class="annottext">forall node edge. Edge node edge -&gt; edge
+</span><a href="Data.Chain.html#via"><span class="hs-keyword hs-var hs-var">via</span></a></span></span><span>  </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679119904"><span class="hs-identifier hs-type">edge</span></a></span><span>
+</span><span id="line-331"></span><span>    </span><span class="hs-special">}</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120461"><span id="local-6989586621679120466"><span class="annot"><span class="annottext">Edge node edge -&gt; Edge node edge -&gt; Bool
+(Edge node edge -&gt; Edge node edge -&gt; Bool)
+-&gt; (Edge node edge -&gt; Edge node edge -&gt; Bool)
+-&gt; Eq (Edge node edge)
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+forall node edge.
+(Eq node, Eq edge) =&gt;
+Edge node edge -&gt; Edge node edge -&gt; Bool
+$c== :: forall node edge.
+(Eq node, Eq edge) =&gt;
+Edge node edge -&gt; Edge node edge -&gt; Bool
+== :: Edge node edge -&gt; Edge node edge -&gt; Bool
+$c/= :: forall node edge.
+(Eq node, Eq edge) =&gt;
+Edge node edge -&gt; Edge node edge -&gt; Bool
+/= :: Edge node edge -&gt; Edge node edge -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120476"><span id="local-6989586621679120481"><span id="local-6989586621679120486"><span id="local-6989586621679120490"><span id="local-6989586621679120493"><span id="local-6989586621679120496"><span id="local-6989586621679120499"><span class="annot"><span class="annottext">Eq (Edge node edge)
+Eq (Edge node edge) =&gt;
+(Edge node edge -&gt; Edge node edge -&gt; Ordering)
+-&gt; (Edge node edge -&gt; Edge node edge -&gt; Bool)
+-&gt; (Edge node edge -&gt; Edge node edge -&gt; Bool)
+-&gt; (Edge node edge -&gt; Edge node edge -&gt; Bool)
+-&gt; (Edge node edge -&gt; Edge node edge -&gt; Bool)
+-&gt; (Edge node edge -&gt; Edge node edge -&gt; Edge node edge)
+-&gt; (Edge node edge -&gt; Edge node edge -&gt; Edge node edge)
+-&gt; Ord (Edge node edge)
+Edge node edge -&gt; Edge node edge -&gt; Bool
+Edge node edge -&gt; Edge node edge -&gt; Ordering
+Edge node edge -&gt; Edge node edge -&gt; Edge node edge
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall node edge. (Ord node, Ord edge) =&gt; Eq (Edge node edge)
+forall node edge.
+(Ord node, Ord edge) =&gt;
+Edge node edge -&gt; Edge node edge -&gt; Bool
+forall node edge.
+(Ord node, Ord edge) =&gt;
+Edge node edge -&gt; Edge node edge -&gt; Ordering
+forall node edge.
+(Ord node, Ord edge) =&gt;
+Edge node edge -&gt; Edge node edge -&gt; Edge node edge
+$ccompare :: forall node edge.
+(Ord node, Ord edge) =&gt;
+Edge node edge -&gt; Edge node edge -&gt; Ordering
+compare :: Edge node edge -&gt; Edge node edge -&gt; Ordering
+$c&lt; :: forall node edge.
+(Ord node, Ord edge) =&gt;
+Edge node edge -&gt; Edge node edge -&gt; Bool
+&lt; :: Edge node edge -&gt; Edge node edge -&gt; Bool
+$c&lt;= :: forall node edge.
+(Ord node, Ord edge) =&gt;
+Edge node edge -&gt; Edge node edge -&gt; Bool
+&lt;= :: Edge node edge -&gt; Edge node edge -&gt; Bool
+$c&gt; :: forall node edge.
+(Ord node, Ord edge) =&gt;
+Edge node edge -&gt; Edge node edge -&gt; Bool
+&gt; :: Edge node edge -&gt; Edge node edge -&gt; Bool
+$c&gt;= :: forall node edge.
+(Ord node, Ord edge) =&gt;
+Edge node edge -&gt; Edge node edge -&gt; Bool
+&gt;= :: Edge node edge -&gt; Edge node edge -&gt; Bool
+$cmax :: forall node edge.
+(Ord node, Ord edge) =&gt;
+Edge node edge -&gt; Edge node edge -&gt; Edge node edge
+max :: Edge node edge -&gt; Edge node edge -&gt; Edge node edge
+$cmin :: forall node edge.
+(Ord node, Ord edge) =&gt;
+Edge node edge -&gt; Edge node edge -&gt; Edge node edge
+min :: Edge node edge -&gt; Edge node edge -&gt; Edge node edge
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120509"><span id="local-6989586621679120515"><span id="local-6989586621679120519"><span class="annot"><span class="annottext">Int -&gt; Edge node edge -&gt; ShowS
+[Edge node edge] -&gt; ShowS
+Edge node edge -&gt; [Char]
+(Int -&gt; Edge node edge -&gt; ShowS)
+-&gt; (Edge node edge -&gt; [Char])
+-&gt; ([Edge node edge] -&gt; ShowS)
+-&gt; Show (Edge node edge)
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; [Char]) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+forall node edge.
+(Show node, Show edge) =&gt;
+Int -&gt; Edge node edge -&gt; ShowS
+forall node edge.
+(Show node, Show edge) =&gt;
+[Edge node edge] -&gt; ShowS
+forall node edge.
+(Show node, Show edge) =&gt;
+Edge node edge -&gt; [Char]
+$cshowsPrec :: forall node edge.
+(Show node, Show edge) =&gt;
+Int -&gt; Edge node edge -&gt; ShowS
+showsPrec :: Int -&gt; Edge node edge -&gt; ShowS
+$cshow :: forall node edge.
+(Show node, Show edge) =&gt;
+Edge node edge -&gt; [Char]
+show :: Edge node edge -&gt; [Char]
+$cshowList :: forall node edge.
+(Show node, Show edge) =&gt;
+[Edge node edge] -&gt; ShowS
+showList :: [Edge node edge] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-332"></span><span>
+</span><span id="line-333"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679119999"><span id="local-6989586621679120523"><span class="annot"><span class="hs-identifier hs-type">Functor</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679119999"><span class="hs-identifier hs-type">node</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-334"></span><span>    </span><span id="local-6989586621679120525"><span class="annot"><span class="annottext">fmap :: forall a b. (a -&gt; b) -&gt; Edge node a -&gt; Edge node b
+</span><span class="hs-identifier hs-var hs-var hs-var">fmap</span></span></span><span> </span><span id="local-6989586621679120526"><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621679120526"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679120527"><span class="annot"><span class="annottext">e :: Edge node a
+</span><a href="#local-6989586621679120527"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span id="local-6989586621679120528"><span class="annot"><span class="annottext">a
+via :: forall node edge. Edge node edge -&gt; edge
+via :: a
+</span><a href="Data.Chain.html#via"><span class="hs-keyword hs-var hs-var">via</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Edge node a
+</span><a href="#local-6989586621679120527"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">{</span><span> </span><span class="annot"><a href="Data.Chain.html#via"><span class="hs-keyword hs-var">via</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679120526"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120528"><span class="hs-keyword hs-type">via</span></a></span><span> </span><span class="hs-special">}</span><span>
+</span><span id="line-335"></span><span>
+</span><span id="line-336"></span><span class="annot"><span class="hs-comment">-- | Flatten a list of edges</span></span><span>
+</span><span id="line-337"></span><span id="local-6989586621679120019"><span id="local-6989586621679120020"><span class="annot"><a href="Data.Chain.html#flattenEdge"><span class="hs-identifier hs-type">flattenEdge</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120019"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679120020"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120019"><span class="hs-identifier hs-type">node</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120020"><span class="hs-identifier hs-type">edge</span></a></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-338"></span><span id="flattenEdge"><span class="annot"><span class="annottext">flattenEdge :: forall node edge. Edge node [edge] -&gt; [Edge node edge]
+</span><a href="Data.Chain.html#flattenEdge"><span class="hs-identifier hs-var hs-var">flattenEdge</span></a></span></span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span id="local-6989586621679120529"><span class="annot"><span class="annottext">node
+to :: forall node edge. Edge node edge -&gt; node
+to :: node
+</span><a href="Data.Chain.html#to"><span class="hs-identifier hs-var hs-var">to</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120530"><span class="annot"><span class="annottext">node
+from :: forall node edge. Edge node edge -&gt; node
+from :: node
+</span><a href="Data.Chain.html#from"><span class="hs-identifier hs-var hs-var">from</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679120531"><span class="annot"><span class="annottext">[edge]
+via :: forall node edge. Edge node edge -&gt; edge
+via :: [edge]
+</span><a href="Data.Chain.html#via"><span class="hs-keyword hs-var hs-var">via</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><a href="Data.Chain.html#Edge"><span class="hs-identifier hs-type">Edge</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">node
+to :: node
+to :: node
+</span><a href="Data.Chain.html#to"><span class="hs-identifier hs-var hs-var">to</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">node
+from :: node
+from :: node
+</span><a href="Data.Chain.html#from"><span class="hs-identifier hs-var hs-var">from</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">via :: edge
+</span><a href="Data.Chain.html#via"><span class="hs-keyword hs-var">via</span></a></span><span class="hs-glyph">=</span><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120532"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679120532"><span class="annot"><span class="annottext">edge
+</span><a href="#local-6989586621679120532"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[edge]
+</span><a href="#local-6989586621679120531"><span class="hs-keyword hs-var">via</span></a></span><span> </span><span class="hs-special">]</span><span>
+</span><span id="line-339"></span></pre></body></html>

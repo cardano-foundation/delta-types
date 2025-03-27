@@ -1,0 +1,772 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DataKinds #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE TypeOperators #-}</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="annot"><span class="hs-comment">{-|
+Copyright   : &#169; 2022-2023 IOHK, 2023-2025 Cardano Foundation
+License     : Apache-2.0
+Description : Manipulate an SQL database table using delta types.
+
+This module provides a 'Store' for tables
+using &quot;Database.Table.SQLite.Simple&quot;.
+-}</span></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Database.Table.Delta.html"><span class="hs-identifier">Database.Table.Delta</span></a></span><span>
+</span><span id="line-18"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Database.Table.Delta.html#newSqlStore"><span class="hs-identifier">newSqlStore</span></a></span><span>
+</span><span id="line-19"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Prelude</span></span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span>
+</span><span id="line-24"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">forM_</span></span><span>
+</span><span id="line-25"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">void</span></span><span>
+</span><span id="line-26"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Class.MonadThrow</span></span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">throwIO</span></span><span>
+</span><span id="line-29"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.IO.Class</span></span><span>
+</span><span id="line-31"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">MonadIO</span></span><span>
+</span><span id="line-32"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">liftIO</span></span><span>
+</span><span id="line-33"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Delta</span></span><span>
+</span><span id="line-35"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Delta</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Proxy</span></span><span>
+</span><span id="line-38"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Proxy</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Store</span></span><span>
+</span><span id="line-41"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">UpdateStore</span></span><span>
+</span><span id="line-42"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">hoistStore</span></span><span>
+</span><span id="line-43"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">mkUpdateStore</span></span><span>
+</span><span id="line-44"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">updateLoad</span></span><span>
+</span><span id="line-45"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Table.html"><span class="hs-identifier">Data.Table</span></a></span><span>
+</span><span id="line-47"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Table.html#DeltaDB"><span class="hs-identifier">DeltaDB</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Table.html#Pile"><span class="hs-identifier">Pile</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Table.html#Table"><span class="hs-identifier">Table</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Database.Table.Schema</span></span><span>
+</span><span id="line-52"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Col</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">IsColumnName</span></span><span>
+</span><span id="line-54"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">Row</span></span><span>
+</span><span id="line-55"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(:.)</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Database.Table.SQLite.Simple</span></span><span>
+</span><span id="line-58"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">IsColumnSql</span></span><span>
+</span><span id="line-59"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-60"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Class.MonadThrow</span></span><span>
+</span><span id="line-61"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">MonadThrow</span></span><span>
+</span><span id="line-62"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-63"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.IORef</span></span><span>
+</span><span id="line-64"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">newIORef</span></span><span>
+</span><span id="line-65"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">readIORef</span></span><span>
+</span><span id="line-66"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">writeIORef</span></span><span>
+</span><span id="line-67"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Data.Table.html"><span class="hs-identifier">Data.Table</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Table</span></span><span>
+</span><span id="line-70"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Database.Table.Schema</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Sql</span></span><span>
+</span><span id="line-71"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Database.Table.SQLite.Simple</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Sql</span></span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    Database operations
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-76"></span><span class="annot"><span class="hs-comment">-- | Helper abstraction for a Database backend</span></span><span>
+</span><span id="line-77"></span><span class="hs-keyword">data</span><span> </span><span id="Database"><span class="annot"><a href="Database.Table.Delta.html#Database"><span class="hs-identifier hs-var">Database</span></a></span></span><span> </span><span id="local-6989586621679120533"><span class="annot"><a href="#local-6989586621679120533"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span id="local-6989586621679120534"><span class="annot"><a href="#local-6989586621679120534"><span class="hs-identifier hs-type">key</span></a></span></span><span> </span><span id="local-6989586621679120535"><span class="annot"><a href="#local-6989586621679120535"><span class="hs-identifier hs-type">row</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Database"><span class="annot"><a href="Database.Table.Delta.html#Database"><span class="hs-identifier hs-var">Database</span></a></span></span><span>
+</span><span id="line-78"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="selectAll"><span class="annot"><span class="annottext">forall (m :: * -&gt; *) key row. Database m key row -&gt; m [(key, row)]
+</span><a href="Database.Table.Delta.html#selectAll"><span class="hs-identifier hs-var hs-var">selectAll</span></a></span></span><span>   </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679120533"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679120534"><span class="hs-identifier hs-type">key</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679120535"><span class="hs-identifier hs-type">row</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-79"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="deleteAll"><span class="annot"><span class="annottext">forall (m :: * -&gt; *) key row. Database m key row -&gt; m ()
+</span><a href="Database.Table.Delta.html#deleteAll"><span class="hs-identifier hs-var hs-var">deleteAll</span></a></span></span><span>   </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679120533"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-80"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="insertMany"><span class="annot"><span class="annottext">forall (m :: * -&gt; *) key row.
+Database m key row -&gt; [(key, row)] -&gt; m ()
+</span><a href="Database.Table.Delta.html#insertMany"><span class="hs-identifier hs-var hs-var">insertMany</span></a></span></span><span>  </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679120534"><span class="hs-identifier hs-type">key</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679120535"><span class="hs-identifier hs-type">row</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679120533"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-81"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="deleteOne"><span class="annot"><span class="annottext">forall (m :: * -&gt; *) key row. Database m key row -&gt; key -&gt; m ()
+</span><a href="Database.Table.Delta.html#deleteOne"><span class="hs-identifier hs-var hs-var">deleteOne</span></a></span></span><span>   </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679120534"><span class="hs-identifier hs-type">key</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679120533"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-82"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="updateOne"><span class="annot"><span class="annottext">forall (m :: * -&gt; *) key row.
+Database m key row -&gt; (key, row) -&gt; m ()
+</span><a href="Database.Table.Delta.html#updateOne"><span class="hs-identifier hs-var hs-var">updateOne</span></a></span></span><span>   </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679120534"><span class="hs-identifier hs-type">key</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679120535"><span class="hs-identifier hs-type">row</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679120533"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-83"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span class="annot"><span class="hs-comment">-- | Helper type for primary keys</span></span><span>
+</span><span id="line-86"></span><span class="hs-keyword">type</span><span> </span><span id="Primary"><span class="annot"><a href="Database.Table.Delta.html#Primary"><span class="hs-identifier hs-var">Primary</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span class="annot"><span class="hs-comment">-- | SQL database backend</span></span><span>
+</span><span id="line-89"></span><span class="annot"><a href="Database.Table.Delta.html#sqlDB"><span class="hs-identifier hs-type">sqlDB</span></a></span><span>
+</span><span id="line-90"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679120552"><span class="annot"><a href="#local-6989586621679120552"><span class="hs-identifier hs-type">table</span></a></span></span><span class="hs-operator">.</span><span>
+</span><span id="line-91"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Database.Table.Delta.html#AppendPrimaryKey"><span class="hs-identifier hs-type">AppendPrimaryKey</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120552"><span class="hs-identifier hs-type">table</span></a></span><span>
+</span><span id="line-92"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sql.IsTableSql</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679120552"><span class="hs-identifier hs-type">table</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><span class="hs-string">&quot;id&quot;</span></span><span> </span><span class="annot"><a href="Database.Table.Delta.html#Primary"><span class="hs-identifier hs-type">Primary</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-93"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-94"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679120552"><span class="hs-identifier hs-type">table</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.Delta.html#Database"><span class="hs-identifier hs-type">Database</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sql.SqlM</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Row</span></span><span> </span><span class="annot"><a href="#local-6989586621679120552"><span class="hs-identifier hs-type">table</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-95"></span><span id="sqlDB"><span class="annot"><span class="annottext">sqlDB :: forall table.
+(AppendPrimaryKey table, IsTableSql (table :. Col &quot;id&quot; Primary)) =&gt;
+Proxy table -&gt; Database SqlM Primary (Row table)
+</span><a href="Database.Table.Delta.html#sqlDB"><span class="hs-identifier hs-var hs-var">sqlDB</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy table
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Database.Table.Delta.html#Database"><span class="hs-identifier hs-type">Database</span></a></span><span>
+</span><span id="line-96"></span><span>    </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">selectAll :: SqlM [(Primary, Row table)]
+</span><a href="Database.Table.Delta.html#selectAll"><span class="hs-identifier hs-var">selectAll</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Row (table :. Col &quot;id&quot; Primary) -&gt; (Primary, Row table))
+-&gt; [Row (table :. Col &quot;id&quot; Primary)] -&gt; [(Primary, Row table)]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy table
+-&gt; Row (table :. Col &quot;id&quot; Primary) -&gt; (Primary, Row table)
+forall t.
+AppendPrimaryKey t =&gt;
+Proxy t -&gt; Row (t :. Col &quot;id&quot; Primary) -&gt; (Primary, Row t)
+</span><a href="Database.Table.Delta.html#fromKeyedRow"><span class="hs-identifier hs-var">fromKeyedRow</span></a></span><span> </span><span class="annot"><span class="annottext">Proxy table
+</span><a href="#local-6989586621679120760"><span class="hs-identifier hs-var">proxy0</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([Row (table :. Col &quot;id&quot; Primary)] -&gt; [(Primary, Row table)])
+-&gt; SqlM [Row (table :. Col &quot;id&quot; Primary)]
+-&gt; SqlM [(Primary, Row table)]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Proxy (table :. Col &quot;id&quot; Primary)
+-&gt; SqlM [Row (table :. Col &quot;id&quot; Primary)]
+forall t (proxy :: * -&gt; *). IsTableSql t =&gt; proxy t -&gt; SqlM [Row t]
+</span><span class="hs-identifier hs-var">Sql.selectAll</span></span><span> </span><span class="annot"><span class="annottext">Proxy (table :. Col &quot;id&quot; Primary)
+</span><a href="#local-6989586621679120763"><span class="hs-identifier hs-var">proxy1</span></a></span><span>
+</span><span id="line-97"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">deleteAll :: SqlM ()
+</span><a href="Database.Table.Delta.html#deleteAll"><span class="hs-identifier hs-var">deleteAll</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Proxy (table :. Col &quot;id&quot; Primary) -&gt; SqlM ()
+forall t (proxy :: * -&gt; *). IsTableSql t =&gt; proxy t -&gt; SqlM ()
+</span><span class="hs-identifier hs-var">Sql.deleteAll</span></span><span> </span><span class="annot"><span class="annottext">Proxy (table :. Col &quot;id&quot; Primary)
+</span><a href="#local-6989586621679120763"><span class="hs-identifier hs-var">proxy1</span></a></span><span>
+</span><span id="line-98"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">insertMany :: [(Primary, Row table)] -&gt; SqlM ()
+</span><a href="Database.Table.Delta.html#insertMany"><span class="hs-identifier hs-var">insertMany</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679120765"><span class="annot"><span class="annottext">[(Primary, Row table)]
+</span><a href="#local-6989586621679120765"><span class="hs-identifier hs-var">zs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-99"></span><span>        </span><span class="annot"><span class="annottext">[Row (table :. Col &quot;id&quot; Primary)]
+-&gt; Proxy (table :. Col &quot;id&quot; Primary) -&gt; SqlM ()
+forall t (proxy :: * -&gt; *).
+IsTableSql t =&gt;
+[Row t] -&gt; proxy t -&gt; SqlM ()
+</span><span class="hs-identifier hs-var">Sql.insertMany</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((Primary, Row table) -&gt; Row (table :. Col &quot;id&quot; Primary))
+-&gt; [(Primary, Row table)] -&gt; [Row (table :. Col &quot;id&quot; Primary)]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy table
+-&gt; (Primary, Row table) -&gt; Row (table :. Col &quot;id&quot; Primary)
+forall t.
+AppendPrimaryKey t =&gt;
+Proxy t -&gt; (Primary, Row t) -&gt; Row (t :. Col &quot;id&quot; Primary)
+</span><a href="Database.Table.Delta.html#toKeyedRow"><span class="hs-identifier hs-var">toKeyedRow</span></a></span><span> </span><span class="annot"><span class="annottext">Proxy table
+</span><a href="#local-6989586621679120760"><span class="hs-identifier hs-var">proxy0</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Primary, Row table)]
+</span><a href="#local-6989586621679120765"><span class="hs-identifier hs-var">zs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Proxy (table :. Col &quot;id&quot; Primary)
+</span><a href="#local-6989586621679120763"><span class="hs-identifier hs-var">proxy1</span></a></span><span>
+</span><span id="line-100"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">deleteOne :: Primary -&gt; SqlM ()
+</span><a href="Database.Table.Delta.html#deleteOne"><span class="hs-identifier hs-var">deleteOne</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679120768"><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120768"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-101"></span><span>        </span><span class="annot"><span class="annottext">Expr Bool -&gt; Proxy (table :. Col &quot;id&quot; Primary) -&gt; SqlM ()
+forall t (proxy :: * -&gt; *).
+IsTableSql t =&gt;
+Expr Bool -&gt; proxy t -&gt; SqlM ()
+</span><span class="hs-identifier hs-var">Sql.deleteWhere</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Col &quot;id&quot; Primary
+</span><a href="#local-6989586621679120770"><span class="hs-identifier hs-var">colKey</span></a></span><span> </span><span class="annot"><span class="annottext">Col &quot;id&quot; Primary -&gt; Primary -&gt; Expr Bool
+forall (n :: Symbol) a.
+(IsColumnName n, ToField a) =&gt;
+Col n a -&gt; a -&gt; Expr Bool
+</span><span class="hs-operator hs-var">Sql.==.</span></span><span> </span><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120768"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Proxy (table :. Col &quot;id&quot; Primary)
+</span><a href="#local-6989586621679120763"><span class="hs-identifier hs-var">proxy1</span></a></span><span>
+</span><span id="line-102"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">updateOne :: (Primary, Row table) -&gt; SqlM ()
+</span><a href="Database.Table.Delta.html#updateOne"><span class="hs-identifier hs-var">updateOne</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679120772"><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120772"><span class="hs-identifier hs-var">key</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120773"><span class="annot"><span class="annottext">Row table
+</span><a href="#local-6989586621679120773"><span class="hs-identifier hs-var">row</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-103"></span><span>        </span><span class="annot"><span class="annottext">Expr Bool
+-&gt; [Update] -&gt; Proxy (table :. Col &quot;id&quot; Primary) -&gt; SqlM ()
+forall t (proxy :: * -&gt; *).
+IsTableSql t =&gt;
+Expr Bool -&gt; [Update] -&gt; proxy t -&gt; SqlM ()
+</span><span class="hs-identifier hs-var">Sql.updateWhere</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Col &quot;id&quot; Primary
+</span><a href="#local-6989586621679120770"><span class="hs-identifier hs-var">colKey</span></a></span><span> </span><span class="annot"><span class="annottext">Col &quot;id&quot; Primary -&gt; Primary -&gt; Expr Bool
+forall (n :: Symbol) a.
+(IsColumnName n, ToField a) =&gt;
+Col n a -&gt; a -&gt; Expr Bool
+</span><span class="hs-operator hs-var">Sql.==.</span></span><span> </span><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120772"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy table -&gt; Row table -&gt; [Update]
+forall t. AppendPrimaryKey t =&gt; Proxy t -&gt; Row t -&gt; [Update]
+</span><a href="Database.Table.Delta.html#mkRowUpdate"><span class="hs-identifier hs-var">mkRowUpdate</span></a></span><span> </span><span class="annot"><span class="annottext">Proxy table
+</span><a href="#local-6989586621679120760"><span class="hs-identifier hs-var">proxy0</span></a></span><span> </span><span class="annot"><span class="annottext">Row table
+</span><a href="#local-6989586621679120773"><span class="hs-identifier hs-var">row</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Proxy (table :. Col &quot;id&quot; Primary)
+</span><a href="#local-6989586621679120763"><span class="hs-identifier hs-var">proxy1</span></a></span><span>
+</span><span id="line-104"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-105"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-106"></span><span>    </span><span id="local-6989586621679120760"><span class="annot"><span class="annottext">proxy0 :: Proxy table
+</span><a href="#local-6989586621679120760"><span class="hs-identifier hs-var hs-var">proxy0</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Proxy table
+forall {k} (t :: k). Proxy t
+</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679120552"><span class="hs-identifier hs-type">table</span></a></span><span>
+</span><span id="line-107"></span><span>    </span><span id="local-6989586621679120763"><span class="annot"><span class="annottext">proxy1 :: Proxy (table :. Col &quot;id&quot; Primary)
+</span><a href="#local-6989586621679120763"><span class="hs-identifier hs-var hs-var">proxy1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Proxy (table :. Col &quot;id&quot; Primary)
+forall {k} (t :: k). Proxy t
+</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679120552"><span class="hs-identifier hs-type">table</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><span class="hs-string">&quot;id&quot;</span></span><span> </span><span class="annot"><a href="Database.Table.Delta.html#Primary"><span class="hs-identifier hs-type">Primary</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-108"></span><span>    </span><span id="local-6989586621679120770"><span class="annot"><span class="annottext">colKey :: Col &quot;id&quot; Primary
+</span><a href="#local-6989586621679120770"><span class="hs-identifier hs-var hs-var">colKey</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Col &quot;id&quot; Primary
+forall (name :: Symbol) a. Col name a
+</span><span class="hs-identifier hs-var">Col</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><span class="hs-string">&quot;id&quot;</span></span><span> </span><span class="annot"><a href="Database.Table.Delta.html#Primary"><span class="hs-identifier hs-type">Primary</span></a></span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span class="hs-keyword">class</span><span> </span><span id="AppendPrimaryKey"><span class="annot"><a href="Database.Table.Delta.html#AppendPrimaryKey"><span class="hs-identifier hs-var">AppendPrimaryKey</span></a></span></span><span> </span><span id="local-6989586621679120566"><span class="annot"><a href="#local-6989586621679120566"><span class="hs-identifier hs-type">t</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-111"></span><span>    </span><span id="toKeyedRow"><span class="annot"><a href="Database.Table.Delta.html#toKeyedRow"><span class="hs-identifier hs-type">toKeyedRow</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679120566"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.Delta.html#Primary"><span class="hs-identifier hs-type">Primary</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Row</span></span><span> </span><span class="annot"><a href="#local-6989586621679120566"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Row</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679120566"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><span class="hs-string">&quot;id&quot;</span></span><span> </span><span class="annot"><a href="Database.Table.Delta.html#Primary"><span class="hs-identifier hs-type">Primary</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-112"></span><span>    </span><span id="fromKeyedRow"><span class="annot"><a href="Database.Table.Delta.html#fromKeyedRow"><span class="hs-identifier hs-type">fromKeyedRow</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679120566"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Row</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679120566"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><span class="hs-string">&quot;id&quot;</span></span><span> </span><span class="annot"><a href="Database.Table.Delta.html#Primary"><span class="hs-identifier hs-type">Primary</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.Delta.html#Primary"><span class="hs-identifier hs-type">Primary</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Row</span></span><span> </span><span class="annot"><a href="#local-6989586621679120566"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-113"></span><span>    </span><span id="mkRowUpdate"><span class="annot"><a href="Database.Table.Delta.html#mkRowUpdate"><span class="hs-identifier hs-type">mkRowUpdate</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679120566"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Row</span></span><span> </span><span class="annot"><a href="#local-6989586621679120566"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Sql.Update</span></span><span class="hs-special">]</span><span>
+</span><span id="line-114"></span><span>
+</span><span id="line-115"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-116"></span><span>    </span><span id="local-6989586621679120593"><span id="local-6989586621679120594"><span id="local-6989586621679120595"><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnName</span></span><span> </span><span class="annot"><a href="#local-6989586621679120593"><span class="hs-identifier hs-type">n1</span></a></span><span>
+</span><span id="line-117"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnSql</span></span><span> </span><span class="annot"><a href="#local-6989586621679120594"><span class="hs-identifier hs-type">a1</span></a></span><span>
+</span><span id="line-118"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-119"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Database.Table.Delta.html#AppendPrimaryKey"><span class="hs-identifier hs-type">AppendPrimaryKey</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Sql.Table</span></span><span> </span><span class="annot"><a href="#local-6989586621679120595"><span class="hs-identifier hs-type">n0</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120593"><span class="hs-identifier hs-type">n1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120594"><span class="hs-identifier hs-type">a1</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-120"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-121"></span><span>    </span><span id="local-6989586621679120787"><span class="annot"><span class="annottext">toKeyedRow :: Proxy (Table n0 :. Col n1 a1)
+-&gt; (Primary, Row (Table n0 :. Col n1 a1))
+-&gt; Row ((Table n0 :. Col n1 a1) :. Col &quot;id&quot; Primary)
+</span><a href="Database.Table.Delta.html#toKeyedRow"><span class="hs-identifier hs-var hs-var hs-var">toKeyedRow</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy (Table n0 :. Col n1 a1)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120788"><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120788"><span class="hs-identifier hs-var">key</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sql.Only</span></span><span> </span><span id="local-6989586621679120790"><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120790"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120790"><span class="hs-identifier hs-var">x1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120788"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-122"></span><span>    </span><span id="local-6989586621679120791"><span class="annot"><span class="annottext">fromKeyedRow :: Proxy (Table n0 :. Col n1 a1)
+-&gt; Row ((Table n0 :. Col n1 a1) :. Col &quot;id&quot; Primary)
+-&gt; (Primary, Row (Table n0 :. Col n1 a1))
+</span><a href="Database.Table.Delta.html#fromKeyedRow"><span class="hs-identifier hs-var hs-var hs-var">fromKeyedRow</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy (Table n0 :. Col n1 a1)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120792"><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120792"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120793"><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120793"><span class="hs-identifier hs-var">key</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120793"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a1 -&gt; Only a1
+forall a. a -&gt; Only a
+</span><span class="hs-identifier hs-var">Sql.Only</span></span><span> </span><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120792"><span class="hs-identifier hs-var">x1</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-123"></span><span>    </span><span id="local-6989586621679120796"><span class="annot"><span class="annottext">mkRowUpdate :: Proxy (Table n0 :. Col n1 a1)
+-&gt; Row (Table n0 :. Col n1 a1) -&gt; [Update]
+</span><a href="Database.Table.Delta.html#mkRowUpdate"><span class="hs-identifier hs-var hs-var hs-var">mkRowUpdate</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy (Table n0 :. Col n1 a1)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Sql.Only</span></span><span> </span><span id="local-6989586621679120797"><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120797"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120798"><span class="annot"><span class="annottext">Col n1 a
+forall {a}. Col n1 a
+forall (name :: Symbol) a. Col name a
+</span><span class="hs-identifier hs-var">Col</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120593"><span class="hs-identifier hs-type">n1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120798"><span class="hs-identifier hs-type">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Col n1 a1 -&gt; a1 -&gt; Update
+forall (n :: Symbol) a.
+(IsColumnName n, ToField a) =&gt;
+Col n a -&gt; a -&gt; Update
+</span><span class="hs-operator hs-var">Sql.=.</span></span><span> </span><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120797"><span class="hs-identifier hs-var">x1</span></a></span><span> </span><span class="hs-special">]</span><span>
+</span><span id="line-124"></span><span>
+</span><span id="line-125"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-126"></span><span>    </span><span id="local-6989586621679120607"><span id="local-6989586621679120608"><span id="local-6989586621679120609"><span id="local-6989586621679120610"><span id="local-6989586621679120611"><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnName</span></span><span> </span><span class="annot"><a href="#local-6989586621679120607"><span class="hs-identifier hs-type">n1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnName</span></span><span> </span><span class="annot"><a href="#local-6989586621679120608"><span class="hs-identifier hs-type">n2</span></a></span><span>
+</span><span id="line-127"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnSql</span></span><span> </span><span class="annot"><a href="#local-6989586621679120609"><span class="hs-identifier hs-type">a1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnSql</span></span><span> </span><span class="annot"><a href="#local-6989586621679120610"><span class="hs-identifier hs-type">a2</span></a></span><span>
+</span><span id="line-128"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-129"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Database.Table.Delta.html#AppendPrimaryKey"><span class="hs-identifier hs-type">AppendPrimaryKey</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Sql.Table</span></span><span> </span><span class="annot"><a href="#local-6989586621679120611"><span class="hs-identifier hs-type">n0</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120607"><span class="hs-identifier hs-type">n1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120609"><span class="hs-identifier hs-type">a1</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120608"><span class="hs-identifier hs-type">n2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120610"><span class="hs-identifier hs-type">a2</span></a></span><span class="hs-special">)</span></span></span></span></span></span><span>
+</span><span id="line-130"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-131"></span><span>    </span><span id="local-6989586621679120810"><span class="annot"><span class="annottext">toKeyedRow :: Proxy ((Table n0 :. Col n1 a1) :. Col n2 a2)
+-&gt; (Primary, Row ((Table n0 :. Col n1 a1) :. Col n2 a2))
+-&gt; Row (((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col &quot;id&quot; Primary)
+</span><a href="Database.Table.Delta.html#toKeyedRow"><span class="hs-identifier hs-var hs-var hs-var">toKeyedRow</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy ((Table n0 :. Col n1 a1) :. Col n2 a2)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120811"><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120811"><span class="hs-identifier hs-var">key</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120812"><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120812"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120813"><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120813"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120812"><span class="hs-identifier hs-var">x1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120813"><span class="hs-identifier hs-var">x2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120811"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-132"></span><span>    </span><span id="local-6989586621679120814"><span class="annot"><span class="annottext">fromKeyedRow :: Proxy ((Table n0 :. Col n1 a1) :. Col n2 a2)
+-&gt; Row (((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col &quot;id&quot; Primary)
+-&gt; (Primary, Row ((Table n0 :. Col n1 a1) :. Col n2 a2))
+</span><a href="Database.Table.Delta.html#fromKeyedRow"><span class="hs-identifier hs-var hs-var hs-var">fromKeyedRow</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy ((Table n0 :. Col n1 a1) :. Col n2 a2)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120815"><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120815"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120816"><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120816"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120817"><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120817"><span class="hs-identifier hs-var">key</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120817"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120815"><span class="hs-identifier hs-var">x1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120816"><span class="hs-identifier hs-var">x2</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-133"></span><span>    </span><span id="local-6989586621679120822"><span class="annot"><span class="annottext">mkRowUpdate :: Proxy ((Table n0 :. Col n1 a1) :. Col n2 a2)
+-&gt; Row ((Table n0 :. Col n1 a1) :. Col n2 a2) -&gt; [Update]
+</span><a href="Database.Table.Delta.html#mkRowUpdate"><span class="hs-identifier hs-var hs-var hs-var">mkRowUpdate</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy ((Table n0 :. Col n1 a1) :. Col n2 a2)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120823"><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120823"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120824"><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120824"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-134"></span><span>        </span><span class="hs-special">[</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Col n1 a1
+forall (name :: Symbol) a. Col name a
+</span><span class="hs-identifier hs-var">Col</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120607"><span class="hs-identifier hs-type">n1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120609"><span class="hs-identifier hs-type">a1</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Col n1 a1 -&gt; a1 -&gt; Update
+forall (n :: Symbol) a.
+(IsColumnName n, ToField a) =&gt;
+Col n a -&gt; a -&gt; Update
+</span><span class="hs-operator hs-var">Sql.=.</span></span><span> </span><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120823"><span class="hs-identifier hs-var">x1</span></a></span><span>
+</span><span id="line-135"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Col n2 a2
+forall (name :: Symbol) a. Col name a
+</span><span class="hs-identifier hs-var">Col</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120608"><span class="hs-identifier hs-type">n2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120610"><span class="hs-identifier hs-type">a2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Col n2 a2 -&gt; a2 -&gt; Update
+forall (n :: Symbol) a.
+(IsColumnName n, ToField a) =&gt;
+Col n a -&gt; a -&gt; Update
+</span><span class="hs-operator hs-var">Sql.=.</span></span><span> </span><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120824"><span class="hs-identifier hs-var">x2</span></a></span><span>
+</span><span id="line-136"></span><span>        </span><span class="hs-special">]</span><span>
+</span><span id="line-137"></span><span>
+</span><span id="line-138"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-139"></span><span>    </span><span id="local-6989586621679120619"><span id="local-6989586621679120620"><span id="local-6989586621679120621"><span id="local-6989586621679120622"><span id="local-6989586621679120623"><span id="local-6989586621679120624"><span id="local-6989586621679120625"><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnName</span></span><span> </span><span class="annot"><a href="#local-6989586621679120619"><span class="hs-identifier hs-type">n1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnName</span></span><span> </span><span class="annot"><a href="#local-6989586621679120620"><span class="hs-identifier hs-type">n2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnName</span></span><span> </span><span class="annot"><a href="#local-6989586621679120621"><span class="hs-identifier hs-type">n3</span></a></span><span>
+</span><span id="line-140"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnSql</span></span><span> </span><span class="annot"><a href="#local-6989586621679120622"><span class="hs-identifier hs-type">a1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnSql</span></span><span> </span><span class="annot"><a href="#local-6989586621679120623"><span class="hs-identifier hs-type">a2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnSql</span></span><span> </span><span class="annot"><a href="#local-6989586621679120624"><span class="hs-identifier hs-type">a3</span></a></span><span>
+</span><span id="line-141"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-142"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Database.Table.Delta.html#AppendPrimaryKey"><span class="hs-identifier hs-type">AppendPrimaryKey</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Sql.Table</span></span><span> </span><span class="annot"><a href="#local-6989586621679120625"><span class="hs-identifier hs-type">n0</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120619"><span class="hs-identifier hs-type">n1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120622"><span class="hs-identifier hs-type">a1</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120620"><span class="hs-identifier hs-type">n2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120623"><span class="hs-identifier hs-type">a2</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120621"><span class="hs-identifier hs-type">n3</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120624"><span class="hs-identifier hs-type">a3</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span><span>
+</span><span id="line-143"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-144"></span><span>    </span><span id="local-6989586621679120838"><span class="annot"><span class="annottext">toKeyedRow :: Proxy (((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+-&gt; (Primary,
+    Row (((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3))
+-&gt; Row
+     ((((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+      :. Col &quot;id&quot; Primary)
+</span><a href="Database.Table.Delta.html#toKeyedRow"><span class="hs-identifier hs-var hs-var hs-var">toKeyedRow</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy (((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120839"><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120839"><span class="hs-identifier hs-var">key</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120840"><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120840"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120841"><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120841"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120842"><span class="annot"><span class="annottext">a3
+</span><a href="#local-6989586621679120842"><span class="hs-identifier hs-var">x3</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120840"><span class="hs-identifier hs-var">x1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120841"><span class="hs-identifier hs-var">x2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a3
+</span><a href="#local-6989586621679120842"><span class="hs-identifier hs-var">x3</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120839"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-145"></span><span>    </span><span id="local-6989586621679120843"><span class="annot"><span class="annottext">fromKeyedRow :: Proxy (((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+-&gt; Row
+     ((((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+      :. Col &quot;id&quot; Primary)
+-&gt; (Primary,
+    Row (((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3))
+</span><a href="Database.Table.Delta.html#fromKeyedRow"><span class="hs-identifier hs-var hs-var hs-var">fromKeyedRow</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy (((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120844"><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120844"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120845"><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120845"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120846"><span class="annot"><span class="annottext">a3
+</span><a href="#local-6989586621679120846"><span class="hs-identifier hs-var">x3</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120847"><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120847"><span class="hs-identifier hs-var">key</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120847"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120844"><span class="hs-identifier hs-var">x1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120845"><span class="hs-identifier hs-var">x2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a3
+</span><a href="#local-6989586621679120846"><span class="hs-identifier hs-var">x3</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-146"></span><span>    </span><span id="local-6989586621679120854"><span class="annot"><span class="annottext">mkRowUpdate :: Proxy (((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+-&gt; Row (((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+-&gt; [Update]
+</span><a href="Database.Table.Delta.html#mkRowUpdate"><span class="hs-identifier hs-var hs-var hs-var">mkRowUpdate</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy (((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120855"><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120855"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120856"><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120856"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120857"><span class="annot"><span class="annottext">a3
+</span><a href="#local-6989586621679120857"><span class="hs-identifier hs-var">x3</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-147"></span><span>        </span><span class="hs-special">[</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Col n1 a1
+forall (name :: Symbol) a. Col name a
+</span><span class="hs-identifier hs-var">Col</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120619"><span class="hs-identifier hs-type">n1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120622"><span class="hs-identifier hs-type">a1</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Col n1 a1 -&gt; a1 -&gt; Update
+forall (n :: Symbol) a.
+(IsColumnName n, ToField a) =&gt;
+Col n a -&gt; a -&gt; Update
+</span><span class="hs-operator hs-var">Sql.=.</span></span><span> </span><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120855"><span class="hs-identifier hs-var">x1</span></a></span><span>
+</span><span id="line-148"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Col n2 a2
+forall (name :: Symbol) a. Col name a
+</span><span class="hs-identifier hs-var">Col</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120620"><span class="hs-identifier hs-type">n2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120623"><span class="hs-identifier hs-type">a2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Col n2 a2 -&gt; a2 -&gt; Update
+forall (n :: Symbol) a.
+(IsColumnName n, ToField a) =&gt;
+Col n a -&gt; a -&gt; Update
+</span><span class="hs-operator hs-var">Sql.=.</span></span><span> </span><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120856"><span class="hs-identifier hs-var">x2</span></a></span><span>
+</span><span id="line-149"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Col n3 a3
+forall (name :: Symbol) a. Col name a
+</span><span class="hs-identifier hs-var">Col</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120621"><span class="hs-identifier hs-type">n3</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120624"><span class="hs-identifier hs-type">a3</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Col n3 a3 -&gt; a3 -&gt; Update
+forall (n :: Symbol) a.
+(IsColumnName n, ToField a) =&gt;
+Col n a -&gt; a -&gt; Update
+</span><span class="hs-operator hs-var">Sql.=.</span></span><span> </span><span class="annot"><span class="annottext">a3
+</span><a href="#local-6989586621679120857"><span class="hs-identifier hs-var">x3</span></a></span><span>
+</span><span id="line-150"></span><span>        </span><span class="hs-special">]</span><span>
+</span><span id="line-151"></span><span>
+</span><span id="line-152"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-153"></span><span>    </span><span id="local-6989586621679120635"><span id="local-6989586621679120636"><span id="local-6989586621679120637"><span id="local-6989586621679120638"><span id="local-6989586621679120639"><span id="local-6989586621679120640"><span id="local-6989586621679120641"><span id="local-6989586621679120642"><span id="local-6989586621679120643"><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnName</span></span><span> </span><span class="annot"><a href="#local-6989586621679120635"><span class="hs-identifier hs-type">n1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnName</span></span><span> </span><span class="annot"><a href="#local-6989586621679120636"><span class="hs-identifier hs-type">n2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnName</span></span><span> </span><span class="annot"><a href="#local-6989586621679120637"><span class="hs-identifier hs-type">n3</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnName</span></span><span> </span><span class="annot"><a href="#local-6989586621679120638"><span class="hs-identifier hs-type">n4</span></a></span><span>
+</span><span id="line-154"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnSql</span></span><span> </span><span class="annot"><a href="#local-6989586621679120639"><span class="hs-identifier hs-type">a1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnSql</span></span><span> </span><span class="annot"><a href="#local-6989586621679120640"><span class="hs-identifier hs-type">a2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnSql</span></span><span> </span><span class="annot"><a href="#local-6989586621679120641"><span class="hs-identifier hs-type">a3</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsColumnSql</span></span><span> </span><span class="annot"><a href="#local-6989586621679120642"><span class="hs-identifier hs-type">a4</span></a></span><span>
+</span><span id="line-155"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-156"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Database.Table.Delta.html#AppendPrimaryKey"><span class="hs-identifier hs-type">AppendPrimaryKey</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Sql.Table</span></span><span> </span><span class="annot"><a href="#local-6989586621679120643"><span class="hs-identifier hs-type">n0</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120635"><span class="hs-identifier hs-type">n1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120639"><span class="hs-identifier hs-type">a1</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120636"><span class="hs-identifier hs-type">n2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120640"><span class="hs-identifier hs-type">a2</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120637"><span class="hs-identifier hs-type">n3</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120641"><span class="hs-identifier hs-type">a3</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120638"><span class="hs-identifier hs-type">n4</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120642"><span class="hs-identifier hs-type">a4</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-157"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-158"></span><span>    </span><span id="local-6989586621679120874"><span class="annot"><span class="annottext">toKeyedRow :: Proxy
+  ((((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+   :. Col n4 a4)
+-&gt; (Primary,
+    Row
+      ((((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+       :. Col n4 a4))
+-&gt; Row
+     (((((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+       :. Col n4 a4)
+      :. Col &quot;id&quot; Primary)
+</span><a href="Database.Table.Delta.html#toKeyedRow"><span class="hs-identifier hs-var hs-var hs-var">toKeyedRow</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy
+  ((((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+   :. Col n4 a4)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120875"><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120875"><span class="hs-identifier hs-var">key</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120876"><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120876"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120877"><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120877"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120878"><span class="annot"><span class="annottext">a3
+</span><a href="#local-6989586621679120878"><span class="hs-identifier hs-var">x3</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120879"><span class="annot"><span class="annottext">a4
+</span><a href="#local-6989586621679120879"><span class="hs-identifier hs-var">x4</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120876"><span class="hs-identifier hs-var">x1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120877"><span class="hs-identifier hs-var">x2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a3
+</span><a href="#local-6989586621679120878"><span class="hs-identifier hs-var">x3</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a4
+</span><a href="#local-6989586621679120879"><span class="hs-identifier hs-var">x4</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120875"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-159"></span><span>    </span><span id="local-6989586621679120880"><span class="annot"><span class="annottext">fromKeyedRow :: Proxy
+  ((((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+   :. Col n4 a4)
+-&gt; Row
+     (((((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+       :. Col n4 a4)
+      :. Col &quot;id&quot; Primary)
+-&gt; (Primary,
+    Row
+      ((((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+       :. Col n4 a4))
+</span><a href="Database.Table.Delta.html#fromKeyedRow"><span class="hs-identifier hs-var hs-var hs-var">fromKeyedRow</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy
+  ((((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+   :. Col n4 a4)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120881"><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120881"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120882"><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120882"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120883"><span class="annot"><span class="annottext">a3
+</span><a href="#local-6989586621679120883"><span class="hs-identifier hs-var">x3</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120884"><span class="annot"><span class="annottext">a4
+</span><a href="#local-6989586621679120884"><span class="hs-identifier hs-var">x4</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120885"><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120885"><span class="hs-identifier hs-var">key</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Primary
+</span><a href="#local-6989586621679120885"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120881"><span class="hs-identifier hs-var">x1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120882"><span class="hs-identifier hs-var">x2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a3
+</span><a href="#local-6989586621679120883"><span class="hs-identifier hs-var">x3</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a4
+</span><a href="#local-6989586621679120884"><span class="hs-identifier hs-var">x4</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-160"></span><span>    </span><span id="local-6989586621679120894"><span class="annot"><span class="annottext">mkRowUpdate :: Proxy
+  ((((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+   :. Col n4 a4)
+-&gt; Row
+     ((((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+      :. Col n4 a4)
+-&gt; [Update]
+</span><a href="Database.Table.Delta.html#mkRowUpdate"><span class="hs-identifier hs-var hs-var hs-var">mkRowUpdate</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy
+  ((((Table n0 :. Col n1 a1) :. Col n2 a2) :. Col n3 a3)
+   :. Col n4 a4)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679120895"><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120895"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120896"><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120896"><span class="hs-identifier hs-var">x2</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120897"><span class="annot"><span class="annottext">a3
+</span><a href="#local-6989586621679120897"><span class="hs-identifier hs-var">x3</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679120898"><span class="annot"><span class="annottext">a4
+</span><a href="#local-6989586621679120898"><span class="hs-identifier hs-var">x4</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-161"></span><span>        </span><span class="hs-special">[</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Col n1 a1
+forall (name :: Symbol) a. Col name a
+</span><span class="hs-identifier hs-var">Col</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120635"><span class="hs-identifier hs-type">n1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120639"><span class="hs-identifier hs-type">a1</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Col n1 a1 -&gt; a1 -&gt; Update
+forall (n :: Symbol) a.
+(IsColumnName n, ToField a) =&gt;
+Col n a -&gt; a -&gt; Update
+</span><span class="hs-operator hs-var">Sql.=.</span></span><span> </span><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679120895"><span class="hs-identifier hs-var">x1</span></a></span><span>
+</span><span id="line-162"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Col n2 a2
+forall (name :: Symbol) a. Col name a
+</span><span class="hs-identifier hs-var">Col</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120636"><span class="hs-identifier hs-type">n2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120640"><span class="hs-identifier hs-type">a2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Col n2 a2 -&gt; a2 -&gt; Update
+forall (n :: Symbol) a.
+(IsColumnName n, ToField a) =&gt;
+Col n a -&gt; a -&gt; Update
+</span><span class="hs-operator hs-var">Sql.=.</span></span><span> </span><span class="annot"><span class="annottext">a2
+</span><a href="#local-6989586621679120896"><span class="hs-identifier hs-var">x2</span></a></span><span>
+</span><span id="line-163"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Col n3 a3
+forall (name :: Symbol) a. Col name a
+</span><span class="hs-identifier hs-var">Col</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120637"><span class="hs-identifier hs-type">n3</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120641"><span class="hs-identifier hs-type">a3</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Col n3 a3 -&gt; a3 -&gt; Update
+forall (n :: Symbol) a.
+(IsColumnName n, ToField a) =&gt;
+Col n a -&gt; a -&gt; Update
+</span><span class="hs-operator hs-var">Sql.=.</span></span><span> </span><span class="annot"><span class="annottext">a3
+</span><a href="#local-6989586621679120897"><span class="hs-identifier hs-var">x3</span></a></span><span>
+</span><span id="line-164"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Col n4 a4
+forall (name :: Symbol) a. Col name a
+</span><span class="hs-identifier hs-var">Col</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><a href="#local-6989586621679120638"><span class="hs-identifier hs-type">n4</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120642"><span class="hs-identifier hs-type">a4</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Col n4 a4 -&gt; a4 -&gt; Update
+forall (n :: Symbol) a.
+(IsColumnName n, ToField a) =&gt;
+Col n a -&gt; a -&gt; Update
+</span><span class="hs-operator hs-var">Sql.=.</span></span><span> </span><span class="annot"><span class="annottext">a4
+</span><a href="#local-6989586621679120898"><span class="hs-identifier hs-var">x4</span></a></span><span>
+</span><span id="line-165"></span><span>        </span><span class="hs-special">]</span><span>
+</span><span id="line-166"></span><span>
+</span><span id="line-167"></span><span class="hs-comment">{-------------------------------------------------------------------------------
+    Database operations
+-------------------------------------------------------------------------------}</span><span>
+</span><span id="line-170"></span><span>
+</span><span id="line-171"></span><span class="hs-comment">-- | Construct a 'UpdateStore' from an SQL table.</span><span>
+</span><span id="line-172"></span><span class="hs-comment">--</span><span>
+</span><span id="line-173"></span><span class="hs-comment">-- The unique IDs will be stored in a column &quot;id&quot; at the end of</span><span>
+</span><span id="line-174"></span><span class="hs-comment">-- each row in the database table.</span><span>
+</span><span id="line-175"></span><span class="annot"><a href="Database.Table.Delta.html#newSqlStore"><span class="hs-identifier hs-type">newSqlStore</span></a></span><span>
+</span><span id="line-176"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679120644"><span class="annot"><a href="#local-6989586621679120644"><span class="hs-identifier hs-type">table</span></a></span></span><span class="hs-operator">.</span><span>
+</span><span id="line-177"></span><span>       </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Database.Table.Delta.html#AppendPrimaryKey"><span class="hs-identifier hs-type">AppendPrimaryKey</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120644"><span class="hs-identifier hs-type">table</span></a></span><span>
+</span><span id="line-178"></span><span>       </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sql.IsTableSql</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679120644"><span class="hs-identifier hs-type">table</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:.</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Col</span></span><span> </span><span class="annot"><span class="hs-string">&quot;id&quot;</span></span><span> </span><span class="annot"><a href="Database.Table.Delta.html#Primary"><span class="hs-identifier hs-type">Primary</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-179"></span><span>       </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Row</span></span><span> </span><span class="annot"><a href="#local-6989586621679120644"><span class="hs-identifier hs-type">table</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-180"></span><span>       </span><span class="hs-special">)</span><span>
+</span><span id="line-181"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679120644"><span class="hs-identifier hs-type">table</span></a></span><span>
+</span><span id="line-182"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sql.Connection</span></span><span>
+</span><span id="line-183"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">UpdateStore</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Data.Table.html#DeltaDB"><span class="hs-identifier hs-type">DeltaDB</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Row</span></span><span> </span><span class="annot"><a href="#local-6989586621679120644"><span class="hs-identifier hs-type">table</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-184"></span><span id="newSqlStore"><span class="annot"><span class="annottext">newSqlStore :: forall table.
+(AppendPrimaryKey table, IsTableSql (table :. Col &quot;id&quot; Primary),
+ Show (Row table)) =&gt;
+Proxy table
+-&gt; Connection -&gt; IO (UpdateStore IO [DeltaDB Primary (Row table)])
+</span><a href="Database.Table.Delta.html#newSqlStore"><span class="hs-identifier hs-var hs-var">newSqlStore</span></a></span></span><span> </span><span id="local-6989586621679120913"><span class="annot"><span class="annottext">Proxy table
+</span><a href="#local-6989586621679120913"><span class="hs-identifier hs-var">proxy</span></a></span></span><span> </span><span id="local-6989586621679120914"><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679120914"><span class="hs-identifier hs-var">conn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-185"></span><span>    </span><span id="local-6989586621679120915"><span class="annot"><a href="#local-6989586621679120915"><span class="hs-identifier hs-var">store'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Proxy table
+-&gt; Database SqlM Primary (Row table)
+-&gt; IO (UpdateStore SqlM [DeltaDB Primary (Row table)])
+forall (n :: * -&gt; *) table.
+(MonadIO n, Show (Row table)) =&gt;
+Proxy table
+-&gt; Database SqlM Primary (Row table)
+-&gt; n (UpdateStore SqlM [DeltaDB Primary (Row table)])
+</span><a href="Database.Table.Delta.html#newDatabaseStore"><span class="hs-identifier hs-var">newDatabaseStore</span></a></span><span> </span><span class="annot"><span class="annottext">Proxy table
+</span><a href="#local-6989586621679120913"><span class="hs-identifier hs-var">proxy</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy table -&gt; Database SqlM Primary (Row table)
+forall table.
+(AppendPrimaryKey table, IsTableSql (table :. Col &quot;id&quot; Primary)) =&gt;
+Proxy table -&gt; Database SqlM Primary (Row table)
+</span><a href="Database.Table.Delta.html#sqlDB"><span class="hs-identifier hs-var">sqlDB</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy table
+forall {k} (t :: k). Proxy t
+</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679120644"><span class="hs-identifier hs-type">table</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-186"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">hoistStore</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679120917"><span class="annot"><span class="annottext">SqlM a
+</span><a href="#local-6989586621679120917"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">SqlM a -&gt; Connection -&gt; IO a
+forall a. SqlM a -&gt; Connection -&gt; IO a
+</span><span class="hs-identifier hs-var">Sql.runSqlM</span></span><span> </span><span class="annot"><span class="annottext">SqlM a
+</span><a href="#local-6989586621679120917"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679120914"><span class="hs-identifier hs-var">conn</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679120915"><span class="hs-identifier hs-type">store'</span></a></span><span>
+</span><span id="line-187"></span><span>
+</span><span id="line-188"></span><span class="annot"><span class="hs-comment">-- | Helper function to create a 'UpdateStore' using a 'Database' backend.</span></span><span>
+</span><span id="line-189"></span><span class="annot"><a href="Database.Table.Delta.html#newDatabaseStore"><span class="hs-identifier hs-type">newDatabaseStore</span></a></span><span>
+</span><span id="line-190"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679120654"><span class="annot"><a href="#local-6989586621679120654"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span id="local-6989586621679120655"><span class="annot"><a href="#local-6989586621679120655"><span class="hs-identifier hs-type">table</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679120654"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Row</span></span><span> </span><span class="annot"><a href="#local-6989586621679120655"><span class="hs-identifier hs-type">table</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-191"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="#local-6989586621679120655"><span class="hs-identifier hs-type">table</span></a></span><span>
+</span><span id="line-192"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.Delta.html#Database"><span class="hs-identifier hs-type">Database</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sql.SqlM</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Row</span></span><span> </span><span class="annot"><a href="#local-6989586621679120655"><span class="hs-identifier hs-type">table</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-193"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679120654"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">UpdateStore</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sql.SqlM</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Data.Table.html#DeltaDB"><span class="hs-identifier hs-type">DeltaDB</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Row</span></span><span> </span><span class="annot"><a href="#local-6989586621679120655"><span class="hs-identifier hs-type">table</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-194"></span><span id="newDatabaseStore"><span class="annot"><span class="annottext">newDatabaseStore :: forall (n :: * -&gt; *) table.
+(MonadIO n, Show (Row table)) =&gt;
+Proxy table
+-&gt; Database SqlM Primary (Row table)
+-&gt; n (UpdateStore SqlM [DeltaDB Primary (Row table)])
+</span><a href="Database.Table.Delta.html#newDatabaseStore"><span class="hs-identifier hs-var hs-var">newDatabaseStore</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy table
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679120963"><span class="annot"><span class="annottext">Database SqlM Primary (Row table)
+</span><a href="#local-6989586621679120963"><span class="hs-identifier hs-var">db</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-195"></span><span>    </span><span id="local-6989586621679120964"><span class="annot"><a href="#local-6989586621679120964"><span class="hs-identifier hs-var">ref</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (IORef (Maybe Supply)) -&gt; n (IORef (Maybe Supply))
+forall a. IO a -&gt; n a
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (IORef (Maybe Supply)) -&gt; n (IORef (Maybe Supply)))
+-&gt; IO (IORef (Maybe Supply)) -&gt; n (IORef (Maybe Supply))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Maybe Supply -&gt; IO (IORef (Maybe Supply))
+forall a. a -&gt; IO (IORef a)
+</span><span class="hs-identifier hs-var">newIORef</span></span><span> </span><span class="annot"><span class="annottext">Maybe Supply
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-196"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679120965"><span class="annot"><a href="#local-6989586621679120965"><span class="hs-identifier hs-var hs-var">rememberSupply</span></a></span></span><span> </span><span id="local-6989586621679120966"><span class="annot"><span class="annottext">Table (Row table)
+</span><a href="#local-6989586621679120966"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IORef (Maybe Supply) -&gt; Maybe Supply -&gt; IO ()
+forall a. IORef a -&gt; a -&gt; IO ()
+</span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (Maybe Supply)
+</span><a href="#local-6989586621679120964"><span class="hs-identifier hs-var">ref</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Supply -&gt; IO ()) -&gt; Maybe Supply -&gt; IO ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Supply -&gt; Maybe Supply
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(Supply -&gt; Maybe Supply) -&gt; Supply -&gt; Maybe Supply
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Table (Row table) -&gt; Supply
+forall row. Table row -&gt; Supply
+</span><a href="Data.Table.html#uids"><span class="hs-identifier hs-var">uids</span></a></span><span> </span><span class="annot"><span class="annottext">Table (Row table)
+</span><a href="#local-6989586621679120966"><span class="hs-identifier hs-var">table</span></a></span><span>
+</span><span id="line-197"></span><span>        </span><span id="local-6989586621679120968"><span class="annot"><a href="#local-6989586621679120968"><span class="hs-identifier hs-var hs-var">load</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-198"></span><span>            </span><span class="hs-comment">-- read database table, preserve keys</span><span>
+</span><span id="line-199"></span><span>            </span><span id="local-6989586621679120969"><span class="annot"><a href="#local-6989586621679120969"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[(Primary, Row table)] -&gt; Table (Row table)
+forall row. [(Primary, row)] -&gt; Table row
+</span><a href="Data.Table.html#fromRows"><span class="hs-identifier hs-var">Table.fromRows</span></a></span><span> </span><span class="annot"><span class="annottext">([(Primary, Row table)] -&gt; Table (Row table))
+-&gt; SqlM [(Primary, Row table)] -&gt; SqlM (Table (Row table))
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Database SqlM Primary (Row table) -&gt; SqlM [(Primary, Row table)]
+forall (m :: * -&gt; *) key row. Database m key row -&gt; m [(key, row)]
+</span><a href="Database.Table.Delta.html#selectAll"><span class="hs-identifier hs-var">selectAll</span></a></span><span> </span><span class="annot"><span class="annottext">Database SqlM Primary (Row table)
+</span><a href="#local-6989586621679120963"><span class="hs-identifier hs-var">db</span></a></span><span>
+</span><span id="line-200"></span><span>            </span><span class="hs-comment">-- but use our own unique ID supply</span><span>
+</span><span id="line-201"></span><span>            </span><span class="annot"><a href="Database.Table.Delta.html#liftIOSqlM"><span class="hs-identifier hs-type">liftIOSqlM</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">readIORef</span></span><span> </span><span class="annot"><a href="#local-6989586621679120964"><span class="hs-identifier hs-type">ref</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">&gt;&gt;=</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-202"></span><span>                </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679120972"><span class="annot"><span class="annottext">Supply
+</span><a href="#local-6989586621679120972"><span class="hs-identifier hs-var">supply</span></a></span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Either SomeException (Table (Row table))
+-&gt; SqlM (Either SomeException (Table (Row table)))
+forall a. a -&gt; SqlM a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Either SomeException (Table (Row table))
+ -&gt; SqlM (Either SomeException (Table (Row table))))
+-&gt; Either SomeException (Table (Row table))
+-&gt; SqlM (Either SomeException (Table (Row table)))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Table (Row table) -&gt; Either SomeException (Table (Row table))
+forall a b. b -&gt; Either a b
+</span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="annot"><span class="annottext">Table (Row table)
+</span><a href="#local-6989586621679120969"><span class="hs-identifier hs-var">table</span></a></span><span class="hs-special">{</span><span class="annot"><a href="Data.Table.html#uids"><span class="hs-identifier hs-var">uids</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679120972"><span class="hs-identifier hs-type">supply</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-203"></span><span>                </span><span class="annot"><span class="annottext">Maybe Supply
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>      </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-204"></span><span>                    </span><span class="annot"><span class="annottext">IO () -&gt; SqlM ()
+forall a. IO a -&gt; SqlM a
+</span><a href="Database.Table.Delta.html#liftIOSqlM"><span class="hs-identifier hs-var">liftIOSqlM</span></a></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; SqlM ()) -&gt; IO () -&gt; SqlM ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Table (Row table) -&gt; IO ()
+</span><a href="#local-6989586621679120965"><span class="hs-identifier hs-var">rememberSupply</span></a></span><span> </span><span class="annot"><span class="annottext">Table (Row table)
+</span><a href="#local-6989586621679120969"><span class="hs-identifier hs-var">table</span></a></span><span>
+</span><span id="line-205"></span><span>                    </span><span class="annot"><span class="annottext">Either SomeException (Table (Row table))
+-&gt; SqlM (Either SomeException (Table (Row table)))
+forall a. a -&gt; SqlM a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Either SomeException (Table (Row table))
+ -&gt; SqlM (Either SomeException (Table (Row table))))
+-&gt; Either SomeException (Table (Row table))
+-&gt; SqlM (Either SomeException (Table (Row table)))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Table (Row table) -&gt; Either SomeException (Table (Row table))
+forall a b. b -&gt; Either a b
+</span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="annot"><span class="annottext">Table (Row table)
+</span><a href="#local-6989586621679120969"><span class="hs-identifier hs-var">table</span></a></span><span>
+</span><span id="line-206"></span><span>        </span><span id="local-6989586621679120973"><span class="annot"><a href="#local-6989586621679120973"><span class="hs-identifier hs-var hs-var">write</span></a></span></span><span> </span><span id="local-6989586621679120974"><span class="annot"><span class="annottext">Table (Row table)
+</span><a href="#local-6989586621679120974"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SqlM () -&gt; SqlM ()
+forall (f :: * -&gt; *) a. Functor f =&gt; f a -&gt; f ()
+</span><span class="hs-identifier hs-var">void</span></span><span> </span><span class="annot"><span class="annottext">(SqlM () -&gt; SqlM ()) -&gt; SqlM () -&gt; SqlM ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-207"></span><span>            </span><span class="annot"><span class="annottext">Database SqlM Primary (Row table) -&gt; SqlM ()
+forall (m :: * -&gt; *) key row. Database m key row -&gt; m ()
+</span><a href="Database.Table.Delta.html#deleteAll"><span class="hs-identifier hs-var">deleteAll</span></a></span><span> </span><span class="annot"><span class="annottext">Database SqlM Primary (Row table)
+</span><a href="#local-6989586621679120963"><span class="hs-identifier hs-var">db</span></a></span><span> </span><span class="hs-comment">-- delete any old data in the table first</span><span>
+</span><span id="line-208"></span><span>            </span><span class="annot"><span class="annottext">Database SqlM Primary (Row table)
+-&gt; [(Primary, Row table)] -&gt; SqlM ()
+forall (m :: * -&gt; *) key row.
+Database m key row -&gt; [(key, row)] -&gt; m ()
+</span><a href="Database.Table.Delta.html#insertMany"><span class="hs-identifier hs-var">insertMany</span></a></span><span> </span><span class="annot"><span class="annottext">Database SqlM Primary (Row table)
+</span><a href="#local-6989586621679120963"><span class="hs-identifier hs-var">db</span></a></span><span> </span><span class="annot"><span class="annottext">([(Primary, Row table)] -&gt; SqlM ())
+-&gt; [(Primary, Row table)] -&gt; SqlM ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Pile (Primary, Row table) -&gt; [(Primary, Row table)]
+forall a. Pile a -&gt; [a]
+</span><a href="Data.Table.html#getPile"><span class="hs-identifier hs-var">getPile</span></a></span><span> </span><span class="annot"><span class="annottext">(Pile (Primary, Row table) -&gt; [(Primary, Row table)])
+-&gt; Pile (Primary, Row table) -&gt; [(Primary, Row table)]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Table (Row table) -&gt; Pile (Primary, Row table)
+forall row. Table row -&gt; Pile (Primary, row)
+</span><a href="Data.Table.html#toRows"><span class="hs-identifier hs-var">Table.toRows</span></a></span><span> </span><span class="annot"><span class="annottext">Table (Row table)
+</span><a href="#local-6989586621679120974"><span class="hs-identifier hs-var">table</span></a></span><span>
+</span><span id="line-209"></span><span>            </span><span class="annot"><span class="annottext">IO () -&gt; SqlM ()
+forall a. IO a -&gt; SqlM a
+</span><a href="Database.Table.Delta.html#liftIOSqlM"><span class="hs-identifier hs-var">liftIOSqlM</span></a></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; SqlM ()) -&gt; IO () -&gt; SqlM ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Table (Row table) -&gt; IO ()
+</span><a href="#local-6989586621679120965"><span class="hs-identifier hs-var">rememberSupply</span></a></span><span> </span><span class="annot"><span class="annottext">Table (Row table)
+</span><a href="#local-6989586621679120974"><span class="hs-identifier hs-var">table</span></a></span><span>
+</span><span id="line-210"></span><span>        </span><span id="local-6989586621679120977"><span class="annot"><a href="#local-6989586621679120977"><span class="hs-identifier hs-var hs-var">update</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SqlM (Either SomeException (Table (Row table)))
+-&gt; (SomeException -&gt; SqlM ())
+-&gt; (Table (Row table) -&gt; [DeltaDB Primary (Row table)] -&gt; SqlM ())
+-&gt; Maybe (Table (Row table))
+-&gt; [DeltaDB Primary (Row table)]
+-&gt; SqlM ()
+forall e (m :: * -&gt; *) t b da.
+(Exception e, Monad m) =&gt;
+m (Either e t)
+-&gt; (e -&gt; m b) -&gt; (t -&gt; da -&gt; m b) -&gt; Maybe t -&gt; da -&gt; m b
+</span><span class="hs-identifier hs-var">updateLoad</span></span><span> </span><span class="annot"><span class="annottext">SqlM (Either SomeException (Table (Row table)))
+</span><a href="#local-6989586621679120968"><span class="hs-identifier hs-var">load</span></a></span><span> </span><span class="annot"><span class="annottext">SomeException -&gt; SqlM ()
+forall e a. Exception e =&gt; e -&gt; SqlM a
+forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
+</span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="annot"><span class="annottext">((Table (Row table) -&gt; [DeltaDB Primary (Row table)] -&gt; SqlM ())
+ -&gt; Maybe (Table (Row table))
+ -&gt; [DeltaDB Primary (Row table)]
+ -&gt; SqlM ())
+-&gt; (Table (Row table) -&gt; [DeltaDB Primary (Row table)] -&gt; SqlM ())
+-&gt; Maybe (Table (Row table))
+-&gt; [DeltaDB Primary (Row table)]
+-&gt; SqlM ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679120978"><span class="annot"><span class="annottext">Table (Row table)
+</span><a href="#local-6989586621679120978"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span id="local-6989586621679120979"><span class="annot"><span class="annottext">[DeltaDB Primary (Row table)]
+</span><a href="#local-6989586621679120979"><span class="hs-identifier hs-var">ds</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-211"></span><span>            </span><span class="annot"><span class="annottext">(DeltaDB Primary (Row table) -&gt; SqlM ())
+-&gt; [DeltaDB Primary (Row table)] -&gt; SqlM ()
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Foldable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m ()
+</span><span class="hs-identifier hs-var">mapM_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Table (Row table) -&gt; DeltaDB Primary (Row table) -&gt; SqlM ()
+</span><a href="#local-6989586621679120981"><span class="hs-identifier hs-var">update1</span></a></span><span> </span><span class="annot"><span class="annottext">Table (Row table)
+</span><a href="#local-6989586621679120978"><span class="hs-identifier hs-var">table</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[DeltaDB Primary (Row table)]
+</span><a href="#local-6989586621679120979"><span class="hs-identifier hs-var">ds</span></a></span><span>
+</span><span id="line-212"></span><span>            </span><span class="annot"><span class="annottext">IO () -&gt; SqlM ()
+forall a. IO a -&gt; SqlM a
+</span><a href="Database.Table.Delta.html#liftIOSqlM"><span class="hs-identifier hs-var">liftIOSqlM</span></a></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; SqlM ()) -&gt; IO () -&gt; SqlM ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Table (Row table) -&gt; IO ()
+</span><a href="#local-6989586621679120965"><span class="hs-identifier hs-var">rememberSupply</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[DeltaDB Primary (Row table)]
+-&gt; Base [DeltaDB Primary (Row table)]
+-&gt; Base [DeltaDB Primary (Row table)]
+forall delta. Delta delta =&gt; delta -&gt; Base delta -&gt; Base delta
+</span><span class="hs-identifier hs-var">apply</span></span><span> </span><span class="annot"><span class="annottext">[DeltaDB Primary (Row table)]
+</span><a href="#local-6989586621679120979"><span class="hs-identifier hs-var">ds</span></a></span><span> </span><span class="annot"><span class="annottext">Base [DeltaDB Primary (Row table)]
+Table (Row table)
+</span><a href="#local-6989586621679120978"><span class="hs-identifier hs-var">table</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-comment">-- need to use updated supply</span><span>
+</span><span id="line-213"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">mkUpdateStore</span></span><span> </span><span class="annot"><a href="#local-6989586621679120968"><span class="hs-identifier hs-type">load</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120973"><span class="hs-identifier hs-type">write</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679120977"><span class="hs-identifier hs-type">update</span></a></span><span>
+</span><span id="line-214"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-215"></span><span>    </span><span id="local-6989586621679120981"><span class="annot"><span class="annottext">update1 :: Table (Row table) -&gt; DeltaDB Primary (Row table) -&gt; SqlM ()
+</span><a href="#local-6989586621679120981"><span class="hs-identifier hs-var hs-var">update1</span></a></span></span><span> </span><span class="annot"><span class="annottext">Table (Row table)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Table.html#InsertManyDB"><span class="hs-identifier hs-type">InsertManyDB</span></a></span><span> </span><span id="local-6989586621679120984"><span class="annot"><span class="annottext">[(Primary, Row table)]
+</span><a href="#local-6989586621679120984"><span class="hs-identifier hs-var">zs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SqlM () -&gt; SqlM ()
+forall (f :: * -&gt; *) a. Functor f =&gt; f a -&gt; f ()
+</span><span class="hs-identifier hs-var">void</span></span><span> </span><span class="annot"><span class="annottext">(SqlM () -&gt; SqlM ()) -&gt; SqlM () -&gt; SqlM ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Database SqlM Primary (Row table)
+-&gt; [(Primary, Row table)] -&gt; SqlM ()
+forall (m :: * -&gt; *) key row.
+Database m key row -&gt; [(key, row)] -&gt; m ()
+</span><a href="Database.Table.Delta.html#insertMany"><span class="hs-identifier hs-var">insertMany</span></a></span><span> </span><span class="annot"><span class="annottext">Database SqlM Primary (Row table)
+</span><a href="#local-6989586621679120963"><span class="hs-identifier hs-var">db</span></a></span><span> </span><span class="annot"><span class="annottext">[(Primary, Row table)]
+</span><a href="#local-6989586621679120984"><span class="hs-identifier hs-var">zs</span></a></span><span>
+</span><span id="line-216"></span><span>    </span><span class="annot"><a href="#local-6989586621679120981"><span class="hs-identifier hs-var">update1</span></a></span><span> </span><span class="annot"><span class="annottext">Table (Row table)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Table.html#DeleteManyDB"><span class="hs-identifier hs-type">DeleteManyDB</span></a></span><span> </span><span id="local-6989586621679120986"><span class="annot"><span class="annottext">[Primary]
+</span><a href="#local-6989586621679120986"><span class="hs-identifier hs-var">ks</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Primary] -&gt; (Primary -&gt; SqlM ()) -&gt; SqlM ()
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Foldable t, Monad m) =&gt;
+t a -&gt; (a -&gt; m b) -&gt; m ()
+</span><span class="hs-identifier hs-var">forM_</span></span><span> </span><span class="annot"><span class="annottext">[Primary]
+</span><a href="#local-6989586621679120986"><span class="hs-identifier hs-var">ks</span></a></span><span> </span><span class="annot"><span class="annottext">((Primary -&gt; SqlM ()) -&gt; SqlM ())
+-&gt; (Primary -&gt; SqlM ()) -&gt; SqlM ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Database SqlM Primary (Row table) -&gt; Primary -&gt; SqlM ()
+forall (m :: * -&gt; *) key row. Database m key row -&gt; key -&gt; m ()
+</span><a href="Database.Table.Delta.html#deleteOne"><span class="hs-identifier hs-var">deleteOne</span></a></span><span> </span><span class="annot"><span class="annottext">Database SqlM Primary (Row table)
+</span><a href="#local-6989586621679120963"><span class="hs-identifier hs-var">db</span></a></span><span>
+</span><span id="line-217"></span><span>    </span><span class="annot"><a href="#local-6989586621679120981"><span class="hs-identifier hs-var">update1</span></a></span><span> </span><span class="annot"><span class="annottext">Table (Row table)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Table.html#UpdateManyDB"><span class="hs-identifier hs-type">UpdateManyDB</span></a></span><span> </span><span id="local-6989586621679120988"><span class="annot"><span class="annottext">[(Primary, Row table)]
+</span><a href="#local-6989586621679120988"><span class="hs-identifier hs-var">zs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Primary, Row table)]
+-&gt; ((Primary, Row table) -&gt; SqlM ()) -&gt; SqlM ()
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Foldable t, Monad m) =&gt;
+t a -&gt; (a -&gt; m b) -&gt; m ()
+</span><span class="hs-identifier hs-var">forM_</span></span><span> </span><span class="annot"><span class="annottext">[(Primary, Row table)]
+</span><a href="#local-6989586621679120988"><span class="hs-identifier hs-var">zs</span></a></span><span> </span><span class="annot"><span class="annottext">(((Primary, Row table) -&gt; SqlM ()) -&gt; SqlM ())
+-&gt; ((Primary, Row table) -&gt; SqlM ()) -&gt; SqlM ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Database SqlM Primary (Row table)
+-&gt; (Primary, Row table) -&gt; SqlM ()
+forall (m :: * -&gt; *) key row.
+Database m key row -&gt; (key, row) -&gt; m ()
+</span><a href="Database.Table.Delta.html#updateOne"><span class="hs-identifier hs-var">updateOne</span></a></span><span> </span><span class="annot"><span class="annottext">Database SqlM Primary (Row table)
+</span><a href="#local-6989586621679120963"><span class="hs-identifier hs-var">db</span></a></span><span>
+</span><span id="line-218"></span><span>
+</span><span id="line-219"></span><span class="hs-comment">-- TODO: This is cheating.</span><span>
+</span><span id="line-220"></span><span class="hs-comment">-- Think more carefully what effects `SqlM` should support.</span><span>
+</span><span id="line-221"></span><span class="hs-comment">-- I think that we do want to support global state as `IORef`,</span><span>
+</span><span id="line-222"></span><span class="hs-comment">-- that we can share with `IO`,</span><span>
+</span><span id="line-223"></span><span class="hs-comment">-- but I'm not sure if that is going to happen.</span><span>
+</span><span id="line-224"></span><span id="local-6989586621679120690"><span class="annot"><a href="Database.Table.Delta.html#liftIOSqlM"><span class="hs-identifier hs-type">liftIOSqlM</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="#local-6989586621679120690"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sql.SqlM</span></span><span> </span><span class="annot"><a href="#local-6989586621679120690"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-225"></span><span id="liftIOSqlM"><span class="annot"><span class="annottext">liftIOSqlM :: forall a. IO a -&gt; SqlM a
+</span><a href="Database.Table.Delta.html#liftIOSqlM"><span class="hs-identifier hs-var hs-var">liftIOSqlM</span></a></span></span><span> </span><span id="local-6989586621679120989"><span class="annot"><span class="annottext">IO a
+</span><a href="#local-6989586621679120989"><span class="hs-identifier hs-var">action</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Connection -&gt; IO a) -&gt; SqlM a
+forall a. (Connection -&gt; IO a) -&gt; SqlM a
+</span><span class="hs-identifier hs-var">Sql.rawSqlite</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Connection
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IO a
+</span><a href="#local-6989586621679120989"><span class="hs-identifier hs-var">action</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-226"></span><span>
+</span><span id="line-227"></span><span class="hs-comment">{- Note [Unique ID supply in newDBStore]
+
+We expect that updating the store and loading the value
+is the same as first loading the value and then apply the delta,
+i.e. we expect that the two actions
+
+    loadS &gt;&gt;= \a -&gt; updateS a da &gt;&gt;= loadS
+    loadS &gt;&gt;= \a -&gt; pure $ apply da a
+
+are operationally equivalent.
+However, this is only the case if we keep track of the supply
+of unique IDs for the table! Otherwise, loading the table
+from the database again can mess up the supply.
+-}</span><span>
+</span><span id="line-241"></span><span class="hs-comment">-- TODO: For clarity, we may want to implement this in terms</span><span>
+</span><span id="line-242"></span><span class="hs-comment">-- of a product of stores (&quot;semidirect product&quot;).</span><span>
+</span><span id="line-243"></span></pre></body></html>
