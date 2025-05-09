@@ -82,9 +82,9 @@ SQL statements for typed database tables.
 </span><span id="line-82"></span><span class="annot"><span class="hs-comment">-- | Render an statement as SQL source code.</span></span><span>
 </span><span id="line-83"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#renderStmt"><span class="hs-identifier hs-type">renderStmt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Var.html#Lets"><span class="hs-identifier hs-type">Var.Lets</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
 </span><span id="line-84"></span><span id="renderStmt"><span class="annot"><span class="annottext">renderStmt :: Stmt -&gt; Lets Text
-</span><a href="Database.Table.SQL.Stmt.html#renderStmt"><span class="hs-identifier hs-var hs-var">renderStmt</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#CreateTable"><span class="hs-identifier hs-type">CreateTable</span></a></span><span> </span><span id="local-6989586621679083241"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083241"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span id="local-6989586621679083242"><span class="annot"><span class="annottext">[(Text, SqlType)]
-</span><a href="#local-6989586621679083242"><span class="hs-identifier hs-var">cols</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
+</span><a href="Database.Table.SQL.Stmt.html#renderStmt"><span class="hs-identifier hs-var hs-var">renderStmt</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#CreateTable"><span class="hs-identifier hs-type">CreateTable</span></a></span><span> </span><span id="local-6989586621679083382"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679083382"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span id="local-6989586621679083383"><span class="annot"><span class="annottext">[(Text, SqlType)]
+</span><a href="#local-6989586621679083383"><span class="hs-identifier hs-var">cols</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
 </span><a href="Database.Table.SQL.Expr.html#text"><span class="hs-identifier hs-var">Expr.text</span></a></span><span>
 </span><span id="line-85"></span><span>    </span><span class="annot"><span class="annottext">(Text -&gt; Lets Text) -&gt; Text -&gt; Lets Text
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -94,7 +94,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
 </span><a href="Database.Table.SQL.Stmt.html#renderName"><span class="hs-identifier hs-var">renderName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083241"><span class="hs-identifier hs-var">table</span></a></span><span>
+</span><a href="#local-6989586621679083382"><span class="hs-identifier hs-var">table</span></a></span><span>
 </span><span id="line-87"></span><span>        </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
@@ -104,29 +104,29 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><a href="Database.Table.SQL.Stmt.html#renderTuple"><span class="hs-identifier hs-var">renderTuple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((Text, SqlType) -&gt; Text) -&gt; [(Text, SqlType)] -&gt; [Text]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">(Text, SqlType) -&gt; Text
-</span><a href="#local-6989586621679083246"><span class="hs-identifier hs-var">renderCol</span></a></span><span> </span><span class="annot"><span class="annottext">[(Text, SqlType)]
-</span><a href="#local-6989586621679083242"><span class="hs-identifier hs-var">cols</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679083387"><span class="hs-identifier hs-var">renderCol</span></a></span><span> </span><span class="annot"><span class="annottext">[(Text, SqlType)]
+</span><a href="#local-6989586621679083383"><span class="hs-identifier hs-var">cols</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-88"></span><span>        </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;;&quot;</span></span><span>
 </span><span id="line-89"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-90"></span><span>    </span><span id="local-6989586621679083246"><span class="annot"><span class="annottext">renderCol :: (Text, SqlType) -&gt; Text
-</span><a href="#local-6989586621679083246"><span class="hs-identifier hs-var hs-var">renderCol</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679083250"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083250"><span class="hs-identifier hs-var">col</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679083251"><span class="annot"><span class="annottext">SqlType
-</span><a href="#local-6989586621679083251"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
+</span><span id="line-90"></span><span>    </span><span id="local-6989586621679083387"><span class="annot"><span class="annottext">renderCol :: (Text, SqlType) -&gt; Text
+</span><a href="#local-6989586621679083387"><span class="hs-identifier hs-var hs-var">renderCol</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679083391"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679083391"><span class="hs-identifier hs-var">col</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679083392"><span class="annot"><span class="annottext">SqlType
+</span><a href="#local-6989586621679083392"><span class="hs-identifier hs-var">typ</span></a></span></span><span class="hs-special">)</span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
 </span><a href="Database.Table.SQL.Stmt.html#renderName"><span class="hs-identifier hs-var">renderName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083250"><span class="hs-identifier hs-var">col</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621679083391"><span class="hs-identifier hs-var">col</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot; &quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">SqlType -&gt; Text
 </span><a href="Database.Table.SQL.Column.html#escapeSqlType"><span class="hs-identifier hs-var">escapeSqlType</span></a></span><span> </span><span class="annot"><span class="annottext">SqlType
-</span><a href="#local-6989586621679083251"><span class="hs-identifier hs-var">typ</span></a></span><span>
-</span><span id="line-91"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#renderStmt"><span class="hs-identifier hs-var">renderStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Insert"><span class="hs-identifier hs-type">Insert</span></a></span><span> </span><span id="local-6989586621679083252"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083252"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span id="local-6989586621679083253"><span class="annot"><span class="annottext">[Text]
-</span><a href="#local-6989586621679083253"><span class="hs-identifier hs-var">cols</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
+</span><a href="#local-6989586621679083392"><span class="hs-identifier hs-var">typ</span></a></span><span>
+</span><span id="line-91"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#renderStmt"><span class="hs-identifier hs-var">renderStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Insert"><span class="hs-identifier hs-type">Insert</span></a></span><span> </span><span id="local-6989586621679083393"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679083393"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span id="local-6989586621679083394"><span class="annot"><span class="annottext">[Text]
+</span><a href="#local-6989586621679083394"><span class="hs-identifier hs-var">cols</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
 </span><a href="Database.Table.SQL.Expr.html#text"><span class="hs-identifier hs-var">Expr.text</span></a></span><span>
 </span><span id="line-92"></span><span>    </span><span class="annot"><span class="annottext">(Text -&gt; Lets Text) -&gt; Text -&gt; Lets Text
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -136,7 +136,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
 </span><a href="Database.Table.SQL.Stmt.html#renderName"><span class="hs-identifier hs-var">renderName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083252"><span class="hs-identifier hs-var">table</span></a></span><span>
+</span><a href="#local-6989586621679083393"><span class="hs-identifier hs-var">table</span></a></span><span>
 </span><span id="line-94"></span><span>        </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
@@ -147,7 +147,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
 </span><a href="Database.Table.SQL.Stmt.html#renderName"><span class="hs-identifier hs-var">renderName</span></a></span><span> </span><span class="annot"><span class="annottext">[Text]
-</span><a href="#local-6989586621679083253"><span class="hs-identifier hs-var">cols</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679083394"><span class="hs-identifier hs-var">cols</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-95"></span><span>        </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
@@ -159,14 +159,14 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 forall a b. a -&gt; [b] -&gt; [a]
 forall (f :: * -&gt; *) a b. Functor f =&gt; a -&gt; f b -&gt; f a
 </span><span class="hs-operator hs-var">&lt;$</span></span><span> </span><span class="annot"><span class="annottext">[Text]
-</span><a href="#local-6989586621679083253"><span class="hs-identifier hs-var">cols</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679083394"><span class="hs-identifier hs-var">cols</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-96"></span><span>        </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;;&quot;</span></span><span>
-</span><span id="line-97"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#renderStmt"><span class="hs-identifier hs-var">renderStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span id="local-6989586621679083255"><span class="annot"><span class="annottext">[Text]
-</span><a href="#local-6989586621679083255"><span class="hs-identifier hs-var">cols</span></a></span></span><span> </span><span id="local-6989586621679083256"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083256"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span class="annot"><span class="annottext">Where
+</span><span id="line-97"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#renderStmt"><span class="hs-identifier hs-var">renderStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span id="local-6989586621679083396"><span class="annot"><span class="annottext">[Text]
+</span><a href="#local-6989586621679083396"><span class="hs-identifier hs-var">cols</span></a></span></span><span> </span><span id="local-6989586621679083397"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679083397"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span class="annot"><span class="annottext">Where
 </span><a href="Database.Table.SQL.Stmt.html#All"><span class="hs-identifier hs-var">All</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
 </span><a href="Database.Table.SQL.Expr.html#text"><span class="hs-identifier hs-var">Expr.text</span></a></span><span>
 </span><span id="line-98"></span><span>    </span><span class="annot"><span class="annottext">(Text -&gt; Lets Text) -&gt; Text -&gt; Lets Text
@@ -180,7 +180,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
 </span><a href="Database.Table.SQL.Stmt.html#renderName"><span class="hs-identifier hs-var">renderName</span></a></span><span> </span><span class="annot"><span class="annottext">[Text]
-</span><a href="#local-6989586621679083255"><span class="hs-identifier hs-var">cols</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679083396"><span class="hs-identifier hs-var">cols</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-99"></span><span>        </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
@@ -188,15 +188,15 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
 </span><a href="Database.Table.SQL.Stmt.html#renderName"><span class="hs-identifier hs-var">renderName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083256"><span class="hs-identifier hs-var">table</span></a></span><span>
+</span><a href="#local-6989586621679083397"><span class="hs-identifier hs-var">table</span></a></span><span>
 </span><span id="line-100"></span><span>        </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;;&quot;</span></span><span>
-</span><span id="line-101"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#renderStmt"><span class="hs-identifier hs-var">renderStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span id="local-6989586621679083258"><span class="annot"><span class="annottext">[Text]
-</span><a href="#local-6989586621679083258"><span class="hs-identifier hs-var">cols</span></a></span></span><span> </span><span id="local-6989586621679083259"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083259"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Where"><span class="hs-identifier hs-type">Where</span></a></span><span> </span><span id="local-6989586621679083260"><span class="annot"><span class="annottext">Expr Bool
-</span><a href="#local-6989586621679083260"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-101"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#renderStmt"><span class="hs-identifier hs-var">renderStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span id="local-6989586621679083399"><span class="annot"><span class="annottext">[Text]
+</span><a href="#local-6989586621679083399"><span class="hs-identifier hs-var">cols</span></a></span></span><span> </span><span id="local-6989586621679083400"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679083400"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Where"><span class="hs-identifier hs-type">Where</span></a></span><span> </span><span id="local-6989586621679083401"><span class="annot"><span class="annottext">Expr Bool
+</span><a href="#local-6989586621679083401"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-102"></span><span>    </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
 </span><a href="Database.Table.SQL.Expr.html#text"><span class="hs-identifier hs-var">Expr.text</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;SELECT &quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
@@ -207,7 +207,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
 </span><a href="Database.Table.SQL.Stmt.html#renderName"><span class="hs-identifier hs-var">renderName</span></a></span><span> </span><span class="annot"><span class="annottext">[Text]
-</span><a href="#local-6989586621679083258"><span class="hs-identifier hs-var">cols</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679083399"><span class="hs-identifier hs-var">cols</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-103"></span><span>        </span><span class="annot"><span class="annottext">Lets Text -&gt; Lets Text -&gt; Lets Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
@@ -216,7 +216,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
 </span><a href="Database.Table.SQL.Stmt.html#renderName"><span class="hs-identifier hs-var">renderName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083259"><span class="hs-identifier hs-var">table</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679083400"><span class="hs-identifier hs-var">table</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-104"></span><span>        </span><span class="annot"><span class="annottext">Lets Text -&gt; Lets Text -&gt; Lets Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
@@ -226,14 +226,14 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr Bool -&gt; Lets Text
 forall a. Expr a -&gt; Lets Text
 </span><a href="Database.Table.SQL.Expr.html#renderExpr"><span class="hs-identifier hs-var">Expr.renderExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Bool
-</span><a href="#local-6989586621679083260"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="#local-6989586621679083401"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-105"></span><span>        </span><span class="annot"><span class="annottext">Lets Text -&gt; Lets Text -&gt; Lets Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
 </span><a href="Database.Table.SQL.Expr.html#text"><span class="hs-identifier hs-var">Expr.text</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;;&quot;</span></span><span>
-</span><span id="line-106"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#renderStmt"><span class="hs-identifier hs-var">renderStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Delete"><span class="hs-identifier hs-type">Delete</span></a></span><span> </span><span id="local-6989586621679083262"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083262"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span class="annot"><span class="annottext">Where
+</span><span id="line-106"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#renderStmt"><span class="hs-identifier hs-var">renderStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Delete"><span class="hs-identifier hs-type">Delete</span></a></span><span> </span><span id="local-6989586621679083403"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679083403"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span class="annot"><span class="annottext">Where
 </span><a href="Database.Table.SQL.Stmt.html#All"><span class="hs-identifier hs-var">All</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
 </span><a href="Database.Table.SQL.Expr.html#text"><span class="hs-identifier hs-var">Expr.text</span></a></span><span>
 </span><span id="line-107"></span><span>    </span><span class="annot"><span class="annottext">(Text -&gt; Lets Text) -&gt; Text -&gt; Lets Text
@@ -243,17 +243,17 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
 </span><a href="Database.Table.SQL.Stmt.html#renderName"><span class="hs-identifier hs-var">renderName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083262"><span class="hs-identifier hs-var">table</span></a></span><span>
-</span><span id="line-108"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#renderStmt"><span class="hs-identifier hs-var">renderStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Delete"><span class="hs-identifier hs-type">Delete</span></a></span><span> </span><span id="local-6989586621679083263"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083263"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Where"><span class="hs-identifier hs-type">Where</span></a></span><span> </span><span id="local-6989586621679083264"><span class="annot"><span class="annottext">Expr Bool
-</span><a href="#local-6989586621679083264"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621679083403"><span class="hs-identifier hs-var">table</span></a></span><span>
+</span><span id="line-108"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#renderStmt"><span class="hs-identifier hs-var">renderStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Delete"><span class="hs-identifier hs-type">Delete</span></a></span><span> </span><span id="local-6989586621679083404"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679083404"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Where"><span class="hs-identifier hs-type">Where</span></a></span><span> </span><span id="local-6989586621679083405"><span class="annot"><span class="annottext">Expr Bool
+</span><a href="#local-6989586621679083405"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-109"></span><span>    </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
 </span><a href="Database.Table.SQL.Expr.html#text"><span class="hs-identifier hs-var">Expr.text</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;DELETE FROM &quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
 </span><a href="Database.Table.SQL.Stmt.html#renderName"><span class="hs-identifier hs-var">renderName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083263"><span class="hs-identifier hs-var">table</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679083404"><span class="hs-identifier hs-var">table</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-110"></span><span>        </span><span class="annot"><span class="annottext">Lets Text -&gt; Lets Text -&gt; Lets Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
@@ -263,23 +263,23 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr Bool -&gt; Lets Text
 forall a. Expr a -&gt; Lets Text
 </span><a href="Database.Table.SQL.Expr.html#renderExpr"><span class="hs-identifier hs-var">Expr.renderExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Bool
-</span><a href="#local-6989586621679083264"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="#local-6989586621679083405"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-111"></span><span>        </span><span class="annot"><span class="annottext">Lets Text -&gt; Lets Text -&gt; Lets Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
 </span><a href="Database.Table.SQL.Expr.html#text"><span class="hs-identifier hs-var">Expr.text</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;;&quot;</span></span><span>
-</span><span id="line-112"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#renderStmt"><span class="hs-identifier hs-var">renderStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#UpdateWhere"><span class="hs-identifier hs-type">UpdateWhere</span></a></span><span> </span><span id="local-6989586621679083265"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083265"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span id="local-6989586621679083266"><span class="annot"><span class="annottext">[Update]
-</span><a href="#local-6989586621679083266"><span class="hs-identifier hs-var">updates</span></a></span></span><span> </span><span id="local-6989586621679083267"><span class="annot"><span class="annottext">Where
-</span><a href="#local-6989586621679083267"><span class="hs-identifier hs-var">whereClause</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-112"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#renderStmt"><span class="hs-identifier hs-var">renderStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#UpdateWhere"><span class="hs-identifier hs-type">UpdateWhere</span></a></span><span> </span><span id="local-6989586621679083406"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679083406"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span id="local-6989586621679083407"><span class="annot"><span class="annottext">[Update]
+</span><a href="#local-6989586621679083407"><span class="hs-identifier hs-var">updates</span></a></span></span><span> </span><span id="local-6989586621679083408"><span class="annot"><span class="annottext">Where
+</span><a href="#local-6989586621679083408"><span class="hs-identifier hs-var">whereClause</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-113"></span><span>    </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
 </span><a href="Database.Table.SQL.Expr.html#text"><span class="hs-identifier hs-var">Expr.text</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;UPDATE &quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
 </span><a href="Database.Table.SQL.Stmt.html#renderName"><span class="hs-identifier hs-var">renderName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083265"><span class="hs-identifier hs-var">table</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679083406"><span class="hs-identifier hs-var">table</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-114"></span><span>        </span><span class="annot"><span class="annottext">Lets Text -&gt; Lets Text -&gt; Lets Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
@@ -296,27 +296,27 @@ forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
 (Traversable t, Applicative f) =&gt;
 t a -&gt; (a -&gt; f b) -&gt; f (t b)
 </span><span class="hs-identifier hs-var">for</span></span><span> </span><span class="annot"><span class="annottext">[Update]
-</span><a href="#local-6989586621679083266"><span class="hs-identifier hs-var">updates</span></a></span><span> </span><span class="annot"><span class="annottext">Update -&gt; Lets Text
+</span><a href="#local-6989586621679083407"><span class="hs-identifier hs-var">updates</span></a></span><span> </span><span class="annot"><span class="annottext">Update -&gt; Lets Text
 </span><a href="Database.Table.SQL.Stmt.html#renderUpdate"><span class="hs-identifier hs-var">renderUpdate</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-116"></span><span>        </span><span class="annot"><span class="annottext">Lets Text -&gt; Lets Text -&gt; Lets Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Where -&gt; Lets Text
-</span><a href="#local-6989586621679083270"><span class="hs-identifier hs-var">renderWhereClause</span></a></span><span> </span><span class="annot"><span class="annottext">Where
-</span><a href="#local-6989586621679083267"><span class="hs-identifier hs-var">whereClause</span></a></span><span>
+</span><a href="#local-6989586621679083411"><span class="hs-identifier hs-var">renderWhereClause</span></a></span><span> </span><span class="annot"><span class="annottext">Where
+</span><a href="#local-6989586621679083408"><span class="hs-identifier hs-var">whereClause</span></a></span><span>
 </span><span id="line-117"></span><span>        </span><span class="annot"><span class="annottext">Lets Text -&gt; Lets Text -&gt; Lets Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
 </span><a href="Database.Table.SQL.Expr.html#text"><span class="hs-identifier hs-var">Expr.text</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;;&quot;</span></span><span>
 </span><span id="line-118"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-119"></span><span>    </span><span id="local-6989586621679083270"><span class="annot"><span class="annottext">renderWhereClause :: Where -&gt; Lets Text
-</span><a href="#local-6989586621679083270"><span class="hs-identifier hs-var hs-var">renderWhereClause</span></a></span></span><span> </span><span class="annot"><span class="annottext">Where
+</span><span id="line-119"></span><span>    </span><span id="local-6989586621679083411"><span class="annot"><span class="annottext">renderWhereClause :: Where -&gt; Lets Text
+</span><a href="#local-6989586621679083411"><span class="hs-identifier hs-var hs-var">renderWhereClause</span></a></span></span><span> </span><span class="annot"><span class="annottext">Where
 </span><a href="Database.Table.SQL.Stmt.html#All"><span class="hs-identifier hs-var">All</span></a></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-120"></span><span>        </span><span class="annot"><span class="annottext">Lets Text
 forall a. Monoid a =&gt; a
 </span><span class="hs-identifier hs-var">mempty</span></span><span>
-</span><span id="line-121"></span><span>    </span><span class="annot"><a href="#local-6989586621679083270"><span class="hs-identifier hs-var">renderWhereClause</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Where"><span class="hs-identifier hs-type">Where</span></a></span><span> </span><span id="local-6989586621679083278"><span class="annot"><span class="annottext">Expr Bool
-</span><a href="#local-6989586621679083278"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-121"></span><span>    </span><span class="annot"><a href="#local-6989586621679083411"><span class="hs-identifier hs-var">renderWhereClause</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Where"><span class="hs-identifier hs-type">Where</span></a></span><span> </span><span id="local-6989586621679083419"><span class="annot"><span class="annottext">Expr Bool
+</span><a href="#local-6989586621679083419"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-122"></span><span>        </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
 </span><a href="Database.Table.SQL.Expr.html#text"><span class="hs-identifier hs-var">Expr.text</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot; WHERE &quot;</span></span><span> </span><span class="annot"><span class="annottext">Lets Text -&gt; Lets Text -&gt; Lets Text
@@ -324,21 +324,21 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr Bool -&gt; Lets Text
 forall a. Expr a -&gt; Lets Text
 </span><a href="Database.Table.SQL.Expr.html#renderExpr"><span class="hs-identifier hs-var">Expr.renderExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Bool
-</span><a href="#local-6989586621679083278"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="#local-6989586621679083419"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-123"></span><span>
 </span><span id="line-124"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#renderUpdate"><span class="hs-identifier hs-type">renderUpdate</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Var.html#Lets"><span class="hs-identifier hs-type">Var.Lets</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
 </span><span id="line-125"></span><span id="renderUpdate"><span class="annot"><span class="annottext">renderUpdate :: Update -&gt; Lets Text
-</span><a href="Database.Table.SQL.Stmt.html#renderUpdate"><span class="hs-identifier hs-var hs-var">renderUpdate</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span class="hs-special">{</span><span id="local-6989586621679083280"><span class="annot"><span class="annottext">Text
+</span><a href="Database.Table.SQL.Stmt.html#renderUpdate"><span class="hs-identifier hs-var hs-var">renderUpdate</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span class="hs-special">{</span><span id="local-6989586621679083421"><span class="annot"><span class="annottext">Text
 lhs :: Text
 lhs :: Update -&gt; Text
-</span><a href="#local-6989586621679083280"><span class="hs-identifier hs-var hs-var">lhs</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679083282"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679083421"><span class="hs-identifier hs-var hs-var">lhs</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679083423"><span class="annot"><span class="annottext">Value
 rhs :: Value
 rhs :: Update -&gt; Value
-</span><a href="#local-6989586621679083282"><span class="hs-identifier hs-var hs-var">rhs</span></a></span></span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621679083423"><span class="hs-identifier hs-var hs-var">rhs</span></a></span></span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-126"></span><span>    </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
 </span><a href="Database.Table.SQL.Expr.html#text"><span class="hs-identifier hs-var">Expr.text</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; Text
 </span><a href="Database.Table.SQL.Stmt.html#renderName"><span class="hs-identifier hs-var">renderName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083280"><span class="hs-identifier hs-var">lhs</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679083421"><span class="hs-identifier hs-var">lhs</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-127"></span><span>        </span><span class="annot"><span class="annottext">Lets Text -&gt; Lets Text -&gt; Lets Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Lets Text
@@ -348,7 +348,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Value -&gt; Lets VarName
 </span><a href="Database.Table.SQL.Var.html#bindValue"><span class="hs-identifier hs-var">Var.bindValue</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679083282"><span class="hs-identifier hs-var">rhs</span></a></span><span> </span><span class="annot"><span class="annottext">Lets VarName -&gt; (VarName -&gt; Lets Text) -&gt; Lets Text
+</span><a href="#local-6989586621679083423"><span class="hs-identifier hs-var">rhs</span></a></span><span> </span><span class="annot"><span class="annottext">Lets VarName -&gt; (VarName -&gt; Lets Text) -&gt; Lets Text
 forall a b. Lets a -&gt; (a -&gt; Lets b) -&gt; Lets b
 forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
 </span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Lets Text
@@ -357,12 +357,12 @@ forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
 </span><span id="line-130"></span><span class="annot"><span class="hs-comment">-- | Escape a column or table name.</span></span><span>
 </span><span id="line-131"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#renderName"><span class="hs-identifier hs-type">renderName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
 </span><span id="line-132"></span><span id="renderName"><span class="annot"><span class="annottext">renderName :: Text -&gt; Text
-</span><a href="Database.Table.SQL.Stmt.html#renderName"><span class="hs-identifier hs-var hs-var">renderName</span></a></span></span><span> </span><span id="local-6989586621679083286"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083286"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Database.Table.SQL.Stmt.html#renderName"><span class="hs-identifier hs-var hs-var">renderName</span></a></span></span><span> </span><span id="local-6989586621679083427"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679083427"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;\&quot;&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679083286"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621679083427"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;\&quot;&quot;</span></span><span>
@@ -370,14 +370,14 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span id="line-134"></span><span class="annot"><span class="hs-comment">-- | Render a tuple</span></span><span>
 </span><span id="line-135"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#renderTuple"><span class="hs-identifier hs-type">renderTuple</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
 </span><span id="line-136"></span><span id="renderTuple"><span class="annot"><span class="annottext">renderTuple :: [Text] -&gt; Text
-</span><a href="Database.Table.SQL.Stmt.html#renderTuple"><span class="hs-identifier hs-var hs-var">renderTuple</span></a></span></span><span> </span><span id="local-6989586621679083287"><span class="annot"><span class="annottext">[Text]
-</span><a href="#local-6989586621679083287"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Database.Table.SQL.Stmt.html#renderTuple"><span class="hs-identifier hs-var hs-var">renderTuple</span></a></span></span><span> </span><span id="local-6989586621679083428"><span class="annot"><span class="annottext">[Text]
+</span><a href="#local-6989586621679083428"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;(&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Text] -&gt; Text
 </span><span class="hs-identifier hs-var">T.intercalate</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;, &quot;</span></span><span> </span><span class="annot"><span class="annottext">[Text]
-</span><a href="#local-6989586621679083287"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621679083428"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;)&quot;</span></span><span>
@@ -387,79 +387,79 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 -------------------------------------------------------------------------------}</span><span>
 </span><span id="line-141"></span><span>
 </span><span id="line-142"></span><span class="annot"><span class="hs-comment">-- | Create a new database table.</span></span><span>
-</span><span id="line-143"></span><span id="local-6989586621679083093"><span id="local-6989586621679083095"><span class="annot"><a href="Database.Table.SQL.Stmt.html#createTable"><span class="hs-identifier hs-type">createTable</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Table.html#IsTableSql"><span class="hs-identifier hs-type">IsTableSql</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083093"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679083095"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083093"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span></span></span><span>
+</span><span id="line-143"></span><span id="local-6989586621679083234"><span id="local-6989586621679083236"><span class="annot"><a href="Database.Table.SQL.Stmt.html#createTable"><span class="hs-identifier hs-type">createTable</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Table.html#IsTableSql"><span class="hs-identifier hs-type">IsTableSql</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083234"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679083236"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083234"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span></span></span><span>
 </span><span id="line-144"></span><span id="createTable"><span class="annot"><span class="annottext">createTable :: forall t (proxy :: * -&gt; *). IsTableSql t =&gt; proxy t -&gt; Stmt
-</span><a href="Database.Table.SQL.Stmt.html#createTable"><span class="hs-identifier hs-var hs-var">createTable</span></a></span></span><span> </span><span id="local-6989586621679083293"><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083293"><span class="hs-identifier hs-var">proxy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Database.Table.SQL.Stmt.html#createTable"><span class="hs-identifier hs-var hs-var">createTable</span></a></span></span><span> </span><span id="local-6989586621679083434"><span class="annot"><span class="annottext">proxy t
+</span><a href="#local-6989586621679083434"><span class="hs-identifier hs-var">proxy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-145"></span><span>    </span><span class="annot"><span class="annottext">Text -&gt; [(Text, SqlType)] -&gt; Stmt
 </span><a href="Database.Table.SQL.Stmt.html#CreateTable"><span class="hs-identifier hs-var">CreateTable</span></a></span><span>
 </span><span id="line-146"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">proxy t -&gt; Text
 forall t (proxy :: * -&gt; *). IsTable t =&gt; proxy t -&gt; Text
 forall (proxy :: * -&gt; *). proxy t -&gt; Text
 </span><a href="Database.Table.Schema.html#getTableName"><span class="hs-identifier hs-var">getTableName</span></a></span><span> </span><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083293"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679083434"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-147"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Text] -&gt; [SqlType] -&gt; [(Text, SqlType)]
 forall a b. [a] -&gt; [b] -&gt; [(a, b)]
 </span><span class="hs-identifier hs-var">zip</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">proxy t -&gt; [Text]
 forall t (proxy :: * -&gt; *). IsTable t =&gt; proxy t -&gt; [Text]
 </span><a href="Database.Table.Schema.html#getColumnNames"><span class="hs-identifier hs-var">getColumnNames</span></a></span><span> </span><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083293"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">proxy t -&gt; [SqlType]
+</span><a href="#local-6989586621679083434"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">proxy t -&gt; [SqlType]
 forall t (proxy :: * -&gt; *). IsTableSql t =&gt; proxy t -&gt; [SqlType]
 </span><a href="Database.Table.SQL.Table.html#getColumnSqlTypes"><span class="hs-identifier hs-var">getColumnSqlTypes</span></a></span><span> </span><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083293"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679083434"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-148"></span><span>
 </span><span id="line-149"></span><span class="annot"><span class="hs-comment">-- | Select all rows from the table.</span></span><span>
-</span><span id="line-150"></span><span id="local-6989586621679083294"><span id="local-6989586621679083295"><span class="annot"><a href="Database.Table.SQL.Stmt.html#selectAll"><span class="hs-identifier hs-type">selectAll</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Table.html#IsTableSql"><span class="hs-identifier hs-type">IsTableSql</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083294"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679083295"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083294"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span></span></span><span>
+</span><span id="line-150"></span><span id="local-6989586621679083435"><span id="local-6989586621679083436"><span class="annot"><a href="Database.Table.SQL.Stmt.html#selectAll"><span class="hs-identifier hs-type">selectAll</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Table.html#IsTableSql"><span class="hs-identifier hs-type">IsTableSql</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083435"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679083436"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083435"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span></span></span><span>
 </span><span id="line-151"></span><span id="selectAll"><span class="annot"><span class="annottext">selectAll :: forall t (proxy :: * -&gt; *). IsTableSql t =&gt; proxy t -&gt; Stmt
-</span><a href="Database.Table.SQL.Stmt.html#selectAll"><span class="hs-identifier hs-var hs-var">selectAll</span></a></span></span><span> </span><span id="local-6989586621679083300"><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083300"><span class="hs-identifier hs-var">proxy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Database.Table.SQL.Stmt.html#selectAll"><span class="hs-identifier hs-var hs-var">selectAll</span></a></span></span><span> </span><span id="local-6989586621679083441"><span class="annot"><span class="annottext">proxy t
+</span><a href="#local-6989586621679083441"><span class="hs-identifier hs-var">proxy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-152"></span><span>    </span><span class="annot"><span class="annottext">[Text] -&gt; Text -&gt; Where -&gt; Stmt
 </span><a href="Database.Table.SQL.Stmt.html#Select"><span class="hs-identifier hs-var">Select</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">proxy t -&gt; [Text]
 forall t (proxy :: * -&gt; *). IsTable t =&gt; proxy t -&gt; [Text]
 </span><a href="Database.Table.Schema.html#getColumnNames"><span class="hs-identifier hs-var">getColumnNames</span></a></span><span> </span><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083300"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">proxy t -&gt; Text
+</span><a href="#local-6989586621679083441"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">proxy t -&gt; Text
 forall t (proxy :: * -&gt; *). IsTable t =&gt; proxy t -&gt; Text
 forall (proxy :: * -&gt; *). proxy t -&gt; Text
 </span><a href="Database.Table.Schema.html#getTableName"><span class="hs-identifier hs-var">getTableName</span></a></span><span> </span><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083300"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Where
+</span><a href="#local-6989586621679083441"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Where
 </span><a href="Database.Table.SQL.Stmt.html#All"><span class="hs-identifier hs-var">All</span></a></span><span>
 </span><span id="line-153"></span><span>
 </span><span id="line-154"></span><span class="annot"><span class="hs-comment">-- | Select those rows from the table that satisfy a condition.</span></span><span>
-</span><span id="line-155"></span><span id="local-6989586621679083113"><span id="local-6989586621679083114"><span class="annot"><a href="Database.Table.SQL.Stmt.html#selectWhere"><span class="hs-identifier hs-type">selectWhere</span></a></span><span>
-</span><span id="line-156"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Table.html#IsTableSql"><span class="hs-identifier hs-type">IsTableSql</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083113"><span class="hs-identifier hs-type">t</span></a></span><span>
-</span><span id="line-157"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Expr.html#Expr"><span class="hs-identifier hs-type">Expr.Expr</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679083114"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083113"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span></span></span><span>
+</span><span id="line-155"></span><span id="local-6989586621679083254"><span id="local-6989586621679083255"><span class="annot"><a href="Database.Table.SQL.Stmt.html#selectWhere"><span class="hs-identifier hs-type">selectWhere</span></a></span><span>
+</span><span id="line-156"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Table.html#IsTableSql"><span class="hs-identifier hs-type">IsTableSql</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083254"><span class="hs-identifier hs-type">t</span></a></span><span>
+</span><span id="line-157"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Expr.html#Expr"><span class="hs-identifier hs-type">Expr.Expr</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679083255"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083254"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span></span></span><span>
 </span><span id="line-158"></span><span id="selectWhere"><span class="annot"><span class="annottext">selectWhere :: forall t (proxy :: * -&gt; *).
 IsTableSql t =&gt;
 Expr Bool -&gt; proxy t -&gt; Stmt
-</span><a href="Database.Table.SQL.Stmt.html#selectWhere"><span class="hs-identifier hs-var hs-var">selectWhere</span></a></span></span><span> </span><span id="local-6989586621679083305"><span class="annot"><span class="annottext">Expr Bool
-</span><a href="#local-6989586621679083305"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679083306"><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083306"><span class="hs-identifier hs-var">proxy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Database.Table.SQL.Stmt.html#selectWhere"><span class="hs-identifier hs-var hs-var">selectWhere</span></a></span></span><span> </span><span id="local-6989586621679083446"><span class="annot"><span class="annottext">Expr Bool
+</span><a href="#local-6989586621679083446"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679083447"><span class="annot"><span class="annottext">proxy t
+</span><a href="#local-6989586621679083447"><span class="hs-identifier hs-var">proxy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-159"></span><span>    </span><span class="annot"><span class="annottext">[Text] -&gt; Text -&gt; Where -&gt; Stmt
 </span><a href="Database.Table.SQL.Stmt.html#Select"><span class="hs-identifier hs-var">Select</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">proxy t -&gt; [Text]
 forall t (proxy :: * -&gt; *). IsTable t =&gt; proxy t -&gt; [Text]
 </span><a href="Database.Table.Schema.html#getColumnNames"><span class="hs-identifier hs-var">getColumnNames</span></a></span><span> </span><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083306"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">proxy t -&gt; Text
+</span><a href="#local-6989586621679083447"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">proxy t -&gt; Text
 forall t (proxy :: * -&gt; *). IsTable t =&gt; proxy t -&gt; Text
 forall (proxy :: * -&gt; *). proxy t -&gt; Text
 </span><a href="Database.Table.Schema.html#getTableName"><span class="hs-identifier hs-var">getTableName</span></a></span><span> </span><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083306"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr Bool -&gt; Where
+</span><a href="#local-6989586621679083447"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr Bool -&gt; Where
 </span><a href="Database.Table.SQL.Stmt.html#Where"><span class="hs-identifier hs-var">Where</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Bool
-</span><a href="#local-6989586621679083305"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679083446"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-160"></span><span>
 </span><span id="line-161"></span><span class="annot"><span class="hs-comment">-- | Insert one row into the corresponding table.</span></span><span>
-</span><span id="line-162"></span><span id="local-6989586621679083307"><span id="local-6989586621679083308"><span class="annot"><a href="Database.Table.SQL.Stmt.html#insertOne"><span class="hs-identifier hs-type">insertOne</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Table.html#IsTableSql"><span class="hs-identifier hs-type">IsTableSql</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083307"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679083308"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083307"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span></span></span><span>
+</span><span id="line-162"></span><span id="local-6989586621679083448"><span id="local-6989586621679083449"><span class="annot"><a href="Database.Table.SQL.Stmt.html#insertOne"><span class="hs-identifier hs-type">insertOne</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Table.html#IsTableSql"><span class="hs-identifier hs-type">IsTableSql</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083448"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679083449"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083448"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span></span></span><span>
 </span><span id="line-163"></span><span id="insertOne"><span class="annot"><span class="annottext">insertOne :: forall t (proxy :: * -&gt; *). IsTableSql t =&gt; proxy t -&gt; Stmt
-</span><a href="Database.Table.SQL.Stmt.html#insertOne"><span class="hs-identifier hs-var hs-var">insertOne</span></a></span></span><span> </span><span id="local-6989586621679083313"><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083313"><span class="hs-identifier hs-var">proxy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Database.Table.SQL.Stmt.html#insertOne"><span class="hs-identifier hs-var hs-var">insertOne</span></a></span></span><span> </span><span id="local-6989586621679083454"><span class="annot"><span class="annottext">proxy t
+</span><a href="#local-6989586621679083454"><span class="hs-identifier hs-var">proxy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-164"></span><span>    </span><span class="annot"><span class="annottext">Text -&gt; [Text] -&gt; Stmt
 </span><a href="Database.Table.SQL.Stmt.html#Insert"><span class="hs-identifier hs-var">Insert</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">proxy t -&gt; Text
 forall t (proxy :: * -&gt; *). IsTable t =&gt; proxy t -&gt; Text
 forall (proxy :: * -&gt; *). proxy t -&gt; Text
 </span><a href="Database.Table.Schema.html#getTableName"><span class="hs-identifier hs-var">getTableName</span></a></span><span> </span><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083313"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">proxy t -&gt; [Text]
+</span><a href="#local-6989586621679083454"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">proxy t -&gt; [Text]
 forall t (proxy :: * -&gt; *). IsTable t =&gt; proxy t -&gt; [Text]
 </span><a href="Database.Table.Schema.html#getColumnNames"><span class="hs-identifier hs-var">getColumnNames</span></a></span><span> </span><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083313"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679083454"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-165"></span><span>
 </span><span id="line-166"></span><span class="hs-comment">-- | Representation of a column update,</span><span>
 </span><span id="line-167"></span><span class="hs-comment">-- for use with 'Database.Table.SQLite.Simple.updateWhere'.</span><span>
@@ -476,76 +476,76 @@ forall t (proxy :: * -&gt; *). IsTable t =&gt; proxy t -&gt; [Text]
 </span><span id="line-176"></span><span class="hs-comment">--</span><span>
 </span><span id="line-177"></span><span class="hs-comment">-- SQL: @SET columnName = value@.</span><span>
 </span><span id="line-178"></span><span class="annot"><a href="Database.Table.SQL.Stmt.html#%3D."><span class="hs-operator hs-type">(=.)</span></a></span><span>
-</span><span id="line-179"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679083119"><span class="annot"><a href="#local-6989586621679083119"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span id="local-6989586621679083121"><span class="annot"><a href="#local-6989586621679083121"><span class="hs-identifier hs-type">a</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.Schema.html#IsColumnName"><span class="hs-identifier hs-type">IsColumnName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083119"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sqlite.ToField</span></span><span> </span><span class="annot"><a href="#local-6989586621679083121"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-180"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083119"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083121"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679083121"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span>
+</span><span id="line-179"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679083260"><span class="annot"><a href="#local-6989586621679083260"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span id="local-6989586621679083262"><span class="annot"><a href="#local-6989586621679083262"><span class="hs-identifier hs-type">a</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Database.Table.Schema.html#IsColumnName"><span class="hs-identifier hs-type">IsColumnName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083260"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sqlite.ToField</span></span><span> </span><span class="annot"><a href="#local-6989586621679083262"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-180"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Database.Table.Schema.html#Col"><span class="hs-identifier hs-type">Col</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083260"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083262"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679083262"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span>
 </span><span id="line-181"></span><span id="%3D."><span class="annot"><span class="annottext">=. :: forall (n :: Symbol) a.
 (IsColumnName n, ToField a) =&gt;
 Col n a -&gt; a -&gt; Update
-</span><a href="Database.Table.SQL.Stmt.html#%3D."><span class="hs-operator hs-var hs-var">(=.)</span></a></span></span><span> </span><span id="local-6989586621679083318"><span class="annot"><span class="annottext">Col n a
-</span><a href="#local-6989586621679083318"><span class="hs-identifier hs-var">col</span></a></span></span><span> </span><span id="local-6989586621679083319"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679083319"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span>
+</span><a href="Database.Table.SQL.Stmt.html#%3D."><span class="hs-operator hs-var hs-var">(=.)</span></a></span></span><span> </span><span id="local-6989586621679083459"><span class="annot"><span class="annottext">Col n a
+</span><a href="#local-6989586621679083459"><span class="hs-identifier hs-var">col</span></a></span></span><span> </span><span id="local-6989586621679083460"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679083460"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span>
 </span><span id="line-182"></span><span>    </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">lhs :: Text
 </span><a href="Database.Table.SQL.Stmt.html#lhs"><span class="hs-identifier hs-var">lhs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Col n a -&gt; Text
 forall (name :: Symbol) a. IsColumnName name =&gt; Col name a -&gt; Text
 </span><a href="Database.Table.Schema.html#getColumnName"><span class="hs-identifier hs-var">getColumnName</span></a></span><span> </span><span class="annot"><span class="annottext">Col n a
-</span><a href="#local-6989586621679083318"><span class="hs-identifier hs-var">col</span></a></span><span>
+</span><a href="#local-6989586621679083459"><span class="hs-identifier hs-var">col</span></a></span><span>
 </span><span id="line-183"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">rhs :: Value
 </span><a href="Database.Table.SQL.Stmt.html#rhs"><span class="hs-identifier hs-var">rhs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Value
 forall a. ToField a =&gt; a -&gt; Value
 </span><span class="hs-identifier hs-var">Sqlite.toField</span></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679083319"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><a href="#local-6989586621679083460"><span class="hs-identifier hs-var">a</span></a></span><span>
 </span><span id="line-184"></span><span>    </span><span class="hs-special">}</span><span>
 </span><span id="line-185"></span><span>
 </span><span id="line-186"></span><span class="annot"><span class="hs-comment">-- | Update those rows in a database table that satisfy a condition.</span></span><span>
-</span><span id="line-187"></span><span id="local-6989586621679083129"><span id="local-6989586621679083130"><span class="annot"><a href="Database.Table.SQL.Stmt.html#updateWhere"><span class="hs-identifier hs-type">updateWhere</span></a></span><span>
-</span><span id="line-188"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Table.html#IsTableSql"><span class="hs-identifier hs-type">IsTableSql</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083129"><span class="hs-identifier hs-type">t</span></a></span><span>
-</span><span id="line-189"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Expr.html#Expr"><span class="hs-identifier hs-type">Expr.Expr</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679083130"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083129"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span></span></span><span>
+</span><span id="line-187"></span><span id="local-6989586621679083270"><span id="local-6989586621679083271"><span class="annot"><a href="Database.Table.SQL.Stmt.html#updateWhere"><span class="hs-identifier hs-type">updateWhere</span></a></span><span>
+</span><span id="line-188"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Table.html#IsTableSql"><span class="hs-identifier hs-type">IsTableSql</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083270"><span class="hs-identifier hs-type">t</span></a></span><span>
+</span><span id="line-189"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Expr.html#Expr"><span class="hs-identifier hs-type">Expr.Expr</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Update"><span class="hs-identifier hs-type">Update</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679083271"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083270"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span></span></span><span>
 </span><span id="line-190"></span><span id="updateWhere"><span class="annot"><span class="annottext">updateWhere :: forall t (proxy :: * -&gt; *).
 IsTableSql t =&gt;
 Expr Bool -&gt; [Update] -&gt; proxy t -&gt; Stmt
-</span><a href="Database.Table.SQL.Stmt.html#updateWhere"><span class="hs-identifier hs-var hs-var">updateWhere</span></a></span></span><span> </span><span id="local-6989586621679083324"><span class="annot"><span class="annottext">Expr Bool
-</span><a href="#local-6989586621679083324"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679083325"><span class="annot"><span class="annottext">[Update]
-</span><a href="#local-6989586621679083325"><span class="hs-identifier hs-var">updates</span></a></span></span><span> </span><span id="local-6989586621679083326"><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083326"><span class="hs-identifier hs-var">proxy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Database.Table.SQL.Stmt.html#updateWhere"><span class="hs-identifier hs-var hs-var">updateWhere</span></a></span></span><span> </span><span id="local-6989586621679083465"><span class="annot"><span class="annottext">Expr Bool
+</span><a href="#local-6989586621679083465"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679083466"><span class="annot"><span class="annottext">[Update]
+</span><a href="#local-6989586621679083466"><span class="hs-identifier hs-var">updates</span></a></span></span><span> </span><span id="local-6989586621679083467"><span class="annot"><span class="annottext">proxy t
+</span><a href="#local-6989586621679083467"><span class="hs-identifier hs-var">proxy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-191"></span><span>    </span><span class="annot"><span class="annottext">Text -&gt; [Update] -&gt; Where -&gt; Stmt
 </span><a href="Database.Table.SQL.Stmt.html#UpdateWhere"><span class="hs-identifier hs-var">UpdateWhere</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">proxy t -&gt; Text
 forall t (proxy :: * -&gt; *). IsTable t =&gt; proxy t -&gt; Text
 forall (proxy :: * -&gt; *). proxy t -&gt; Text
 </span><a href="Database.Table.Schema.html#getTableName"><span class="hs-identifier hs-var">getTableName</span></a></span><span> </span><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083326"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Update]
-</span><a href="#local-6989586621679083325"><span class="hs-identifier hs-var">updates</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr Bool -&gt; Where
+</span><a href="#local-6989586621679083467"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Update]
+</span><a href="#local-6989586621679083466"><span class="hs-identifier hs-var">updates</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr Bool -&gt; Where
 </span><a href="Database.Table.SQL.Stmt.html#Where"><span class="hs-identifier hs-var">Where</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Bool
-</span><a href="#local-6989586621679083324"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679083465"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-192"></span><span>
 </span><span id="line-193"></span><span class="annot"><span class="hs-comment">-- | Delete all rows from a database table.</span></span><span>
-</span><span id="line-194"></span><span id="local-6989586621679083327"><span id="local-6989586621679083328"><span class="annot"><a href="Database.Table.SQL.Stmt.html#deleteAll"><span class="hs-identifier hs-type">deleteAll</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Table.html#IsTableSql"><span class="hs-identifier hs-type">IsTableSql</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083327"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679083328"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083327"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span></span></span><span>
+</span><span id="line-194"></span><span id="local-6989586621679083468"><span id="local-6989586621679083469"><span class="annot"><a href="Database.Table.SQL.Stmt.html#deleteAll"><span class="hs-identifier hs-type">deleteAll</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Table.html#IsTableSql"><span class="hs-identifier hs-type">IsTableSql</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083468"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679083469"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083468"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span></span></span><span>
 </span><span id="line-195"></span><span id="deleteAll"><span class="annot"><span class="annottext">deleteAll :: forall t (proxy :: * -&gt; *). IsTableSql t =&gt; proxy t -&gt; Stmt
-</span><a href="Database.Table.SQL.Stmt.html#deleteAll"><span class="hs-identifier hs-var hs-var">deleteAll</span></a></span></span><span> </span><span id="local-6989586621679083332"><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083332"><span class="hs-identifier hs-var">proxy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Database.Table.SQL.Stmt.html#deleteAll"><span class="hs-identifier hs-var hs-var">deleteAll</span></a></span></span><span> </span><span id="local-6989586621679083473"><span class="annot"><span class="annottext">proxy t
+</span><a href="#local-6989586621679083473"><span class="hs-identifier hs-var">proxy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-196"></span><span>    </span><span class="annot"><span class="annottext">Text -&gt; Where -&gt; Stmt
 </span><a href="Database.Table.SQL.Stmt.html#Delete"><span class="hs-identifier hs-var">Delete</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">proxy t -&gt; Text
 forall t (proxy :: * -&gt; *). IsTable t =&gt; proxy t -&gt; Text
 forall (proxy :: * -&gt; *). proxy t -&gt; Text
 </span><a href="Database.Table.Schema.html#getTableName"><span class="hs-identifier hs-var">getTableName</span></a></span><span> </span><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083332"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Where
+</span><a href="#local-6989586621679083473"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Where
 </span><a href="Database.Table.SQL.Stmt.html#All"><span class="hs-identifier hs-var">All</span></a></span><span>
 </span><span id="line-197"></span><span>
 </span><span id="line-198"></span><span class="annot"><span class="hs-comment">-- | Delete those rows from a database table that satisfy a condition.</span></span><span>
-</span><span id="line-199"></span><span id="local-6989586621679083333"><span id="local-6989586621679083334"><span class="annot"><a href="Database.Table.SQL.Stmt.html#deleteWhere"><span class="hs-identifier hs-type">deleteWhere</span></a></span><span>
-</span><span id="line-200"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Table.html#IsTableSql"><span class="hs-identifier hs-type">IsTableSql</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083333"><span class="hs-identifier hs-type">t</span></a></span><span>
-</span><span id="line-201"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Expr.html#Expr"><span class="hs-identifier hs-type">Expr.Expr</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679083334"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083333"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span></span></span><span>
+</span><span id="line-199"></span><span id="local-6989586621679083474"><span id="local-6989586621679083475"><span class="annot"><a href="Database.Table.SQL.Stmt.html#deleteWhere"><span class="hs-identifier hs-type">deleteWhere</span></a></span><span>
+</span><span id="line-200"></span><span>    </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Database.Table.SQL.Table.html#IsTableSql"><span class="hs-identifier hs-type">IsTableSql</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083474"><span class="hs-identifier hs-type">t</span></a></span><span>
+</span><span id="line-201"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Expr.html#Expr"><span class="hs-identifier hs-type">Expr.Expr</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679083475"><span class="hs-identifier hs-type">proxy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679083474"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Database.Table.SQL.Stmt.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span></span></span><span>
 </span><span id="line-202"></span><span id="deleteWhere"><span class="annot"><span class="annottext">deleteWhere :: forall t (proxy :: * -&gt; *).
 IsTableSql t =&gt;
 Expr Bool -&gt; proxy t -&gt; Stmt
-</span><a href="Database.Table.SQL.Stmt.html#deleteWhere"><span class="hs-identifier hs-var hs-var">deleteWhere</span></a></span></span><span> </span><span id="local-6989586621679083338"><span class="annot"><span class="annottext">Expr Bool
-</span><a href="#local-6989586621679083338"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679083339"><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083339"><span class="hs-identifier hs-var">proxy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Database.Table.SQL.Stmt.html#deleteWhere"><span class="hs-identifier hs-var hs-var">deleteWhere</span></a></span></span><span> </span><span id="local-6989586621679083479"><span class="annot"><span class="annottext">Expr Bool
+</span><a href="#local-6989586621679083479"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679083480"><span class="annot"><span class="annottext">proxy t
+</span><a href="#local-6989586621679083480"><span class="hs-identifier hs-var">proxy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-203"></span><span>    </span><span class="annot"><span class="annottext">Text -&gt; Where -&gt; Stmt
 </span><a href="Database.Table.SQL.Stmt.html#Delete"><span class="hs-identifier hs-var">Delete</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">proxy t -&gt; Text
 forall t (proxy :: * -&gt; *). IsTable t =&gt; proxy t -&gt; Text
 forall (proxy :: * -&gt; *). proxy t -&gt; Text
 </span><a href="Database.Table.Schema.html#getTableName"><span class="hs-identifier hs-var">getTableName</span></a></span><span> </span><span class="annot"><span class="annottext">proxy t
-</span><a href="#local-6989586621679083339"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr Bool -&gt; Where
+</span><a href="#local-6989586621679083480"><span class="hs-identifier hs-var">proxy</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr Bool -&gt; Where
 </span><a href="Database.Table.SQL.Stmt.html#Where"><span class="hs-identifier hs-var">Where</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Bool
-</span><a href="#local-6989586621679083338"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679083479"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-204"></span></pre></body></html>
